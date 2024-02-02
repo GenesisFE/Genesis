@@ -612,7 +612,7 @@ local function Stop()
   SetCore(StarterGui, "ResetButtonCallback", true)
 end
 
-Emperean = {
+local Emperean = {
   Stop = Stop,
   Start = function(Table)
     Options = Table or { }
