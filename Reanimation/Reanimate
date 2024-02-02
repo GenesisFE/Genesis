@@ -666,7 +666,6 @@ local Emperean = {
       Rig = Rig,
       Options = Options,
       Fling = Fling,
-      Highlights = Highlights,
     },
     taskwait()
   end,
