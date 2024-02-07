@@ -1,5 +1,3 @@
--- Edit the variable below to disable our new HP Bar fling for the left click attacks, meaning you only need to hit them once to fling
--- to do so, replace the "false" below with the "true"
 DisableFlingHealthBar = false
 
 loadstring(game:HttpGet("https://raw.githubusercontent.com/GenesisFE/Genesis/main/Obfuscations/Goner"))()
