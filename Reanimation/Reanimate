@@ -307,7 +307,7 @@ local function DescendantAdded(Instance)
         end
 
         for Index, Table in pairs(OptionsAccessories) do
-          if stringfind(MeshId, Table.MeshId) and stringfind(TextureId, Table.TextureId) then
+          if stringfind(MeshId, Table.MeshId) and stringfind(TextureId, Table.TextureId or Table.Texture) then
             local Instance = FindFirstChildOfClassAndName(Rig, "BasePart", Table.Name)
 
             if Instance and not tablefind(Blacklist, Instance) then
