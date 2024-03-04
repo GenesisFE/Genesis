@@ -610,6 +610,10 @@ local function Stop()
 
   Destroy(BindableEvent)
   SetCore(StarterGui, "ResetButtonCallback", true)
+
+	pcall(function()
+		stop()
+	end)
 end
 
 local Emperean = {
