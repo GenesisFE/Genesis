@@ -1419,4 +1419,4 @@ local function reanimate()
 	}
 end
 
-return {reanimate = reanimate, stopreanimate = stopreanimate, gp = gp, rs = rs, insSet = insSet, insGet = insGet, cfMul = cfMul, mouse = mouse}
+return {reanimate = reanimate, stopreanimate = stopreanimate, gp = gp, rs = rs, insSet = insSet, insGet = insGet, cfMul = cfMul, mouse = mouse, isReanimated=function() return c end}
