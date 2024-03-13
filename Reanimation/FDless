@@ -243,7 +243,7 @@ local ctrltp=false
 local placeholders=true
 local clickfling=false
 local highlightflingtargets=true
-local discharscripts=true
+local discharscripts=function(v) if IsA(v,"Script") then insSet(v,"Disabled",true) end end
 local flingchangestate=true
 local respawntp=true
 
