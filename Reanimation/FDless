@@ -110,6 +110,7 @@ local ws=FindFirstChildOfClass(game,"Workspace")
 local uis=FindFirstChildOfClass(game,"UserInputService")
 local gs=FindFirstChildOfClass(game,"GuiService")
 local lp=insGet(plrs,"LocalPlayer")
+local pg=FindFirstChildOfClass(lp,"PlayerGui")
 local mouse=insGet(lp,"GetMouse")(lp)
 local stepped=insGet(rus,"Stepped")
 local heartbeat=insGet(rus,"Heartbeat")
@@ -1054,7 +1055,7 @@ local function reanimate()
 			insSet(h,"OutlineColor",c3(1,0,0))
 			insSet(h,"FillTransparency",0.5)
 			insSet(h,"OutlineTransparency",0)
-			insSet(h,"Parent",i10)
+			insSet(h,"Parent",pg)
 			flingtable[targetpart]=h
 		else
 			flingtable[targetpart]=false
