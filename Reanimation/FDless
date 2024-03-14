@@ -151,11 +151,15 @@ local accessorylimbs={
 	{meshid="14241018198",textureid="",C0=cf_0,Name="Torso"},
 	{meshid="13421774668",textureid="",C0=cf_0,Name="Torso"},
 
-	{meshid="4324138105",textureid="4391374782",C0=angles(0,0,rad(90)),Name="Right Arm"},
-	{meshid="4489232754",textureid="4489233876",C0=angles(0,0,rad(-90)),Name="Left Arm"},
-	{meshid="4154474745",textureid="4154474807",C0=angles(0,0,rad(90)),Name="Right Leg"},
-	{meshid="4094864753",textureid="4094881938",C0=angles(0,0,rad(-90)),Name="Left Leg"},
-	{meshid="4819720316",textureid="4819722776",C0=angles(0,0,rad(15)),Name="Torso"}
+	{meshid="4324138105",textureid="4324138210",C0=cfMul(angles(-1.6144295580947547,1.5707963267948966,0),cf(-0.125,0.3,0)),Name="Left Arm"},
+	{meshid="4154474745",textureid="4154474807",C0=cfMul(angles(1.5271630954950384,-1.5707963267948966,0),cf(-0.125,-0.3,0)),Name="Left Arm"},
+	{meshid="3030546036",textureid="3650191503",C0=cfMul(angles(1.5271630954950384,1.5707963267948966,0),cf(0.125,-0.3,0)),Name="Right Arm"},
+	{meshid="3030546036",textureid="3443321249",C0=cfMul(angles(-1.6144295580947547,-1.5707963267948966,0),cf(0.125,0.3,0)),Name="Right Arm"},
+	{meshid="3030546036",textureid="3360974849",C0=cfMul(angles(1.5271630954950384,1.5707963267948966,0),cf(-0.125,-0.35,0)),Name="Left Leg"},
+	{meshid="3030546036",textureid="3360978739",C0=cfMul(angles(-1.6144295580947547,-1.5707963267948966,0),cf(-0.125,0.3,0)),Name="Left Leg"},
+	{meshid="3030546036",textureid="3033898741",C0=cfMul(angles(1.5271630954950384,-1.5707963267948966,0),cf(0.125,-0.35,0)),Name="Right Leg"},
+	{meshid="3030546036",textureid="3409604993",C0=cfMul(angles(-1.6144295580947547,1.5707963267948966,0),cf(0.125,0.3,0)),Name="Right Leg"},
+	{meshid="4819720316",textureid="4819722776",C0=angles(0,0,0.2617993877991494),Name="Torso"}
 }
 
 local function gp(p,n,cl)
@@ -1159,6 +1163,7 @@ local function reanimate()
 				pos=pos+v3_010*(raycastresult+3-v3Get(pos,"Y"))*min(delta*20,1)
 				if jumpingInput then
 					Yvel=jumpPower
+					onground=false
 				end
 			else
 				Yvel=Yvel-gravity*delta
@@ -1174,68 +1179,236 @@ local function reanimate()
 
 		if firstperson then
 			if isWalking then
-				xzvel=v3Get(v3Get(camcfLV*v3_101,"Unit")*FWmovement+v3Get(camcfRV*v3_101,"Unit")*RTmovement,"Unit")*walkSpeed
-				pos=pos+(xzvel+v3_010*Yvel)*delta
-				cfr=cfl(pos,pos+camcfLV*v3_101)
+				if walkSpeed==0 then
+					xzvel=v3_0
+					if onground then
+						cfr=cfl(pos,pos+camcfLV*v3_101)
+						camcf=cfAdd(camrot,pos+v3_0150)
+						cframes[rootpart]=cfr
+						insSet(cam,"CFrame",camcf)
+						lerpsIdle()
+					elseif Yvel>0 then
+						pos=pos+v3_010*Yvel*delta
+						cfr=cfl(pos,pos+camcfLV*v3_101)
+						camcf=cfAdd(camrot,pos+v3_0150)
+						cframes[rootpart]=cfr
+						insSet(cam,"CFrame",camcf)
+						lerpsJump()
+					else
+						pos=pos+v3_010*Yvel*delta
+						cfr=cfl(pos,pos+camcfLV*v3_101)
+						camcf=cfAdd(camrot,pos+v3_0150)
+						cframes[rootpart]=cfr
+						insSet(cam,"CFrame",camcf)
+						lerpsFall()
+					end
+				else
+					xzvel=v3Get(v3Get(camcfLV*v3_101,"Unit")*FWmovement+v3Get(camcfRV*v3_101,"Unit")*RTmovement,"Unit")*walkSpeed
+					if onground then
+						pos=pos+xzvel*delta
+						cfr=cfl(pos,pos+camcfLV*v3_101)
+						camcf=cfAdd(camrot,pos+v3_0150)
+						cframes[rootpart]=cfr
+						insSet(cam,"CFrame",camcf)
+						lerpsWalk()
+					elseif Yvel>0 then
+						pos=pos+(xzvel+v3_010*Yvel)*delta
+						cfr=cfl(pos,pos+camcfLV*v3_101)
+						camcf=cfAdd(camrot,pos+v3_0150)
+						cframes[rootpart]=cfr
+						insSet(cam,"CFrame",camcf)
+						lerpsJump()
+					else 
+						pos=pos+(xzvel+v3_010*Yvel)*delta
+						cfr=cfl(pos,pos+camcfLV*v3_101)
+						camcf=cfAdd(camrot,pos+v3_0150)
+						cframes[rootpart]=cfr
+						insSet(cam,"CFrame",camcf)
+						lerpsFall()
+					end
+				end
 			else
 				xzvel=v3_0
-				pos=pos+v3_010*Yvel*delta
-				cfr=cfl(pos,pos+camcfLV*v3_101)
+				if onground then
+					cfr=cfl(pos,pos+camcfLV*v3_101)
+					camcf=cfAdd(camrot,pos+v3_0150)
+					cframes[rootpart]=cfr
+					insSet(cam,"CFrame",camcf)
+					lerpsIdle()
+				elseif Yvel>0 then
+					pos=pos+v3_010*Yvel*delta
+					cfr=cfl(pos,pos+camcfLV*v3_101)
+					camcf=cfAdd(camrot,pos+v3_0150)
+					cframes[rootpart]=cfr
+					insSet(cam,"CFrame",camcf)
+					lerpsJump()
+				else
+					pos=pos+v3_010*Yvel*delta
+					cfr=cfl(pos,pos+camcfLV*v3_101)
+					camcf=cfAdd(camrot,pos+v3_0150)
+					cframes[rootpart]=cfr
+					insSet(cam,"CFrame",camcf)
+					lerpsFall()
+				end
 			end
-			camcf=cfAdd(camrot,pos+v3_0150)
 		elseif shiftlock then	
 			if isWalking then
-				xzvel=v3Get(v3Get(camcfLV*v3_101,"Unit")*FWmovement+v3Get(camcfRV*v3_101,"Unit")*RTmovement,"Unit")*walkSpeed
-				pos=pos+(xzvel+v3_010*Yvel)*delta
-				cfr=cfl(pos,pos+camcfLV*v3_101)
+				if walkSpeed==0 then
+					xzvel=v3_0
+					if onground then
+						cfr=cfl(pos,pos+camcfLV*v3_101)
+						camcf=cfAdd(camrot,pos+v3_0150+camcfRV*1.75+camcfLV*cammag)
+						cframes[rootpart]=cfr
+						insSet(cam,"CFrame",camcf)
+						lerpsIdle()
+					elseif Yvel>0 then
+						pos=pos+v3_010*Yvel*delta
+						cfr=cfl(pos,pos+camcfLV*v3_101)
+						camcf=cfAdd(camrot,pos+v3_0150+camcfRV*1.75+camcfLV*cammag)
+						cframes[rootpart]=cfr
+						insSet(cam,"CFrame",camcf)
+						lerpsJump()
+					else
+						pos=pos+v3_010*Yvel*delta
+						cfr=cfl(pos,pos+camcfLV*v3_101)
+						camcf=cfAdd(camrot,pos+v3_0150+camcfRV*1.75+camcfLV*cammag)
+						cframes[rootpart]=cfr
+						insSet(cam,"CFrame",camcf)
+						lerpsFall()
+					end
+				else
+					xzvel=v3Get(v3Get(camcfLV*v3_101,"Unit")*FWmovement+v3Get(camcfRV*v3_101,"Unit")*RTmovement,"Unit")*walkSpeed
+					if onground then
+						pos=pos+xzvel*delta
+						cfr=cfl(pos,pos+camcfLV*v3_101)
+						camcf=cfAdd(camrot,pos+v3_0150+camcfRV*1.75+camcfLV*cammag)
+						cframes[rootpart]=cfr
+						insSet(cam,"CFrame",camcf)
+						lerpsWalk()
+					elseif Yvel>0 then
+						pos=pos+(xzvel+v3_010*Yvel)*delta
+						cfr=cfl(pos,pos+camcfLV*v3_101)
+						camcf=cfAdd(camrot,pos+v3_0150+camcfRV*1.75+camcfLV*cammag)
+						cframes[rootpart]=cfr
+						insSet(cam,"CFrame",camcf)
+						lerpsJump()
+					else
+						pos=pos+(xzvel+v3_010*Yvel)*delta
+						cfr=cfl(pos,pos+camcfLV*v3_101)
+						camcf=cfAdd(camrot,pos+v3_0150+camcfRV*1.75+camcfLV*cammag)
+						cframes[rootpart]=cfr
+						insSet(cam,"CFrame",camcf)
+						lerpsFall()
+					end
+				end
 			else
 				xzvel=v3_0
-				pos=pos+v3_010*Yvel*delta
-				cfr=cfl(pos,pos+camcfLV*v3_101)
+				if onground then
+					cfr=cfl(pos,pos+camcfLV*v3_101)
+					camcf=cfAdd(camrot,pos+v3_0150+camcfRV*1.75+camcfLV*cammag)
+					cframes[rootpart]=cfr
+					insSet(cam,"CFrame",camcf)
+					lerpsIdle()
+				elseif Yvel>0 then
+					pos=pos+v3_010*Yvel*delta
+					cfr=cfl(pos,pos+camcfLV*v3_101)
+					camcf=cfAdd(camrot,pos+v3_0150+camcfRV*1.75+camcfLV*cammag)
+					cframes[rootpart]=cfr
+					insSet(cam,"CFrame",camcf)
+					lerpsJump()
+				else
+					pos=pos+v3_010*Yvel*delta
+					cfr=cfl(pos,pos+camcfLV*v3_101)
+					camcf=cfAdd(camrot,pos+v3_0150+camcfRV*1.75+camcfLV*cammag)
+					cframes[rootpart]=cfr
+					insSet(cam,"CFrame",camcf)
+					lerpsFall()
+				end
 			end
-			camcf=cfAdd(camrot,pos+v3_0150+camcfRV*1.75+camcfLV*cammag)
 		else
 			if isWalking then
 				if walkSpeed==0 then
 					xzvel=v3_0
-					pos=pos+v3_010*Yvel*delta
-					cfr=cfAdd(cfGet(cfr,"Rotation"),pos)
+					if onground then
+						cfr=cfAdd(cfGet(cfr,"Rotation"),pos)
+						camcf=cfAdd(camrot,pos+v3_0150+camcfLV*cammag)
+						cframes[rootpart]=cfr
+						insSet(cam,"CFrame",camcf)
+						lerpsIdle()
+					elseif Yvel>0 then
+						pos=pos+v3_010*Yvel*delta
+						cfr=cfAdd(cfGet(cfr,"Rotation"),pos)
+						camcf=cfAdd(camrot,pos+v3_0150+camcfLV*cammag)
+						cframes[rootpart]=cfr
+						insSet(cam,"CFrame",camcf)
+						lerpsJump()
+					else
+						pos=pos+v3_010*Yvel*delta
+						cfr=cfAdd(cfGet(cfr,"Rotation"),pos)
+						camcf=cfAdd(camrot,pos+v3_0150+camcfLV*cammag)
+						cframes[rootpart]=cfr
+						insSet(cam,"CFrame",camcf)
+						lerpsFall()
+					end
 				else
 					xzvel=v3Get(v3Get(camcfLV*v3_101,"Unit")*FWmovement+v3Get(camcfRV*v3_101,"Unit")*RTmovement,"Unit")*walkSpeed
-					pos=pos+(xzvel+(v3_010*Yvel))*delta
-					cfr=cfAdd(Lerp(cfGet(cfr,"Rotation"),cfl(v3_0,xzvel),deltaTime),pos)
+					if onground then
+						pos=pos+xzvel*delta
+						cfr=cfAdd(Lerp(cfGet(cfr,"Rotation"),cfl(v3_0,xzvel),deltaTime),pos)
+						camcf=cfAdd(camrot,pos+v3_0150+camcfLV*cammag)
+						cframes[rootpart]=cfr
+						insSet(cam,"CFrame",camcf)
+						lerpsWalk()
+					elseif Yvel>0 then
+						pos=pos+(xzvel+(v3_010*Yvel))*delta
+						cfr=cfAdd(Lerp(cfGet(cfr,"Rotation"),cfl(v3_0,xzvel),deltaTime),pos)
+						camcf=cfAdd(camrot,pos+v3_0150+camcfLV*cammag)
+						cframes[rootpart]=cfr
+						insSet(cam,"CFrame",camcf)
+						lerpsJump()
+					else
+						pos=pos+(xzvel+(v3_010*Yvel))*delta
+						cfr=cfAdd(Lerp(cfGet(cfr,"Rotation"),cfl(v3_0,xzvel),deltaTime),pos)
+						camcf=cfAdd(camrot,pos+v3_0150+camcfLV*cammag)
+						cframes[rootpart]=cfr
+						insSet(cam,"CFrame",camcf)
+						lerpsFall()
+					end
 				end
 			else
 				xzvel=v3_0
-				pos=pos+v3_010*Yvel*delta
-				cfr=cfAdd(cfGet(cfr,"Rotation"),pos)
+				if onground then
+					cfr=cfAdd(cfGet(cfr,"Rotation"),pos)
+					camcf=cfAdd(camrot,pos+v3_0150+camcfLV*cammag)
+					cframes[rootpart]=cfr
+					insSet(cam,"CFrame",camcf)
+					lerpsIdle()
+				elseif Yvel>0 then
+					pos=pos+v3_010*Yvel*delta
+					cfr=cfAdd(cfGet(cfr,"Rotation"),pos)
+					camcf=cfAdd(camrot,pos+v3_0150+camcfLV*cammag)
+					cframes[rootpart]=cfr
+					insSet(cam,"CFrame",camcf)
+					lerpsJump()
+				else
+					pos=pos+v3_010*Yvel*delta
+					cfr=cfAdd(cfGet(cfr,"Rotation"),pos)
+					camcf=cfAdd(camrot,pos+v3_0150+camcfLV*cammag)
+					cframes[rootpart]=cfr
+					insSet(cam,"CFrame",camcf)
+					lerpsFall()
+				end
 			end
-			camcf=cfAdd(camrot,pos+v3_0150+camcfLV*cammag)
-		end
-		insSet(cam,"CFrame",camcf)
-
-		cframes[rootpart]=cfr
-
-		if onground then
-			if isWalking then
-				lerpsWalk()
-			else
-				lerpsIdle()
-			end
-		elseif Yvel>0 then
-			lerpsJump()
-		else
-			lerpsFall()
 		end
 
 		refreshjointsI(rootpart)
 		tclear(refreshedjoints)
 
-		if abs(Yvel)>1 then
-			noYvelTime=0
-		else
+		if onground then
 			noYvelTime=min(noYvelTime+delta*0.3,1)
 			xzvel=xzvel*(1-noYvelTime)
+		else
+			noYvelTime=0
 		end
 
 		local idlerv=v3(sin((sine-0.0375)*16),sin(sine*16),sin((sine+0.075)*16))
@@ -1340,12 +1513,9 @@ local function reanimate()
 		velYchg1=velYchg1-velYchg1*(deltaTime/2)
 		return velYchg1
 	end
-
 	local function rotToMouse(alpha) --this rotates ur character towards your mouse hit position
-		local mpos=cfGet(insGet(mouse,"Hit"),"Position")
-		cfr=Lerp(cfr,cfl(pos,pos+mpos*v3_010),alpha or deltaTime)
+		cfr=Lerp(cfr,cfl(pos,pos*v3_010+cfGet(insGet(mouse,"Hit"),"Position")*v3_101),alpha or deltaTime)
 	end
-
 	local function glitchJoint(joint,targetGlitchTime,delayFrom,delayTo,radiansFrom,radiansTo) 
 		if sine>targetGlitchTime then --local glitchtime=0 addMode("x",{idle=function() glitchtime=glitchJoint(joint,glitchtime,0.2,0.4,-0.1,0.1) end})
 			radiansFrom=radiansFrom*100
@@ -1386,7 +1556,7 @@ local function reanimate()
 	local function isFirstPerson() --returns true if user is in first person camera mode
 		return firstperson
 	end
-
+	
 	return {
 		cframes=cframes,
 		joints=joints,
