@@ -1,5 +1,5 @@
 --[[
-  FDless Reanimate from Patchma Hub V39
+  FDless Reanimate from Patchma Hub V40
   by MyWorld
   Patchma Hub Discord: https://discord.com/invite/QMy5f6DrbH
 ]]
@@ -241,16 +241,16 @@ local function makeplaceholder(v)
 end
 local function emptyfunction() end
 
-local allowshiftlock=true
-local ctrltp=false
-local placeholders=true
-local clickfling=false
-local highlightflingtargets=true
-local discharscripts=function(v) if IsA(v,"Script") then insSet(v,"Disabled",true) end end
-local flingchangestate=true
-local respawntp=true
-local breakjointsmethod=1
-local simrad=true
+local allowshiftlock=allowshiftlock~=false
+local ctrltp=ctrltp==true
+local placeholders=placeholders~=false
+local clickfling=clickfling==true
+local highlightflingtargets=highlightflingtargets~=false
+local discharscripts=discharscripts~=false and function(v) if IsA(v,"Script") then insSet(v,"Disabled",true) end end
+local flingchangestate=flingchangestate~=false
+local respawntp=(type(respawntp)=="number" and respawntp) or 3
+local breakjointsmethod=(type(breakjointsmethod)=="number" and breakjointsmethod) or 1
+local simrad=simrad~=false
 
 local c=nil
 local function stopreanimate() 
@@ -699,7 +699,7 @@ local function reanimate()
 						insSet(hrp,"CFrame",cfr)
 						twait(0.2501)
 					end
-					if respawntp then
+					if respawntp==1 then
 						local startpos=pos+v3(mrandom(-32,32),0,mrandom(-32,32))
 						local dir=nil
 						local poscheck=true
@@ -725,6 +725,22 @@ local function reanimate()
 						insSet(hrp,"AssemblyLinearVelocity",v3_0)
 						insSet(hrp,"AssemblyAngularVelocity",v3_0)
 						twait(0.2501)
+					elseif respawntp==2 then
+						insSet(hrp,"CFrame",cfAdd(cfr,cfGet(cfr,"RightVector")*3.5-cfGet(cfr,"LookVector")*3.5))
+						insSet(hrp,"AssemblyLinearVelocity",v3_0)
+						insSet(hrp,"AssemblyAngularVelocity",v3_0)
+						twait(0.2501)
+					elseif respawntp==3 then
+						local t=osclock()+0.2501
+						local startcf=cfAdd(cfGet(cfr,"Rotation"),pos*v3_101+v3_010*(fpdh+5))
+						while twait() do
+							insSet(hrp,"CFrame",startcf)
+							insSet(hrp,"AssemblyLinearVelocity",v3_0)
+							insSet(hrp,"AssemblyAngularVelocity",v3_0)
+							if osclock()>t then
+								break
+							end
+						end
 					end
 					if newc~=c then
 						return
