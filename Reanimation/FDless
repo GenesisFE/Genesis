@@ -1,5 +1,5 @@
 --[[
-  FDless Reanimate from Patchma Hub V40
+  FDless Reanimate from Patchma Hub V41
   by MyWorld
   Patchma Hub Discord: https://discord.com/invite/QMy5f6DrbH
 ]]
@@ -193,18 +193,6 @@ local function getNetlessVelocity(realVel)
 	end
 	return realVel*v3_xz+v3_net
 end
-local sft=1/45
-local function getFallingTime(Ypos,destY,gravity)
-	local velY=25.01
-	local fallingTime=0
-	gravity=gravity*sft
-	while (Ypos>destY) or (velY>0) do
-		fallingTime=fallingTime+sft
-		velY=velY-gravity
-		Ypos=Ypos+(velY*sft)
-	end
-	return fallingTime
-end
 local function getMeshOfPart(v)
 	if IsA(v,"MeshPart") then
 		return insGet(v,"MeshId"), insGet(v,"TextureID")
@@ -334,9 +322,9 @@ local function reanimate()
 	camcon2=Connect(GetPropertyChangedSignal(ws,"CurrentCamera"),onnewcamera)
 	onnewcamera()
 
-	local rGravity=insGet(ws,"Gravity")
+	local velYdelta=insGet(ws,"Gravity")*0.025
 	Connect(GetPropertyChangedSignal(ws,"Gravity"),function()
-		rGravity=insGet(ws,"Gravity")
+		velYdelta=insGet(ws,"Gravity")*0.025
 	end)
 
 	local fpdh=insGet(ws,"FallenPartsDestroyHeight")
@@ -709,14 +697,14 @@ local function reanimate()
 								local diff=(startpos-insGet(v,"Position"))*v3_101
 								if v3Get(diff,"Magnitude")<10 then
 									poscheck=true
-									dir=dir or (v3Get(diff,"Unit") * 3)
+									dir=dir or (v3Get(diff,"Unit")*3)
 									startpos=startpos+dir
 								end
 							end
 							local diff=(startpos-pos)*v3_101
 							if v3Get(diff,"Magnitude")<10 then
 								poscheck=true
-								dir=dir or (v3Get(diff,"Unit") * 3)
+								dir=dir or (v3Get(diff,"Unit")*3)
 								startpos=startpos+dir
 							end
 						end
@@ -732,7 +720,7 @@ local function reanimate()
 						twait(0.2501)
 					elseif respawntp==3 then
 						local t=osclock()+0.2501
-						local startcf=cfAdd(cfGet(cfr,"Rotation"),pos*v3_101+v3_010*(fpdh+5))
+						local startcf=cfAdd(cfMul(cfGet(cfr,"Rotation"),angles(1.5707963267948966,0,0)),pos*v3_101+v3_010*(fpdh+30))
 						while twait() do
 							insSet(hrp,"CFrame",startcf)
 							insSet(hrp,"AssemblyLinearVelocity",v3_0)
@@ -1496,7 +1484,7 @@ local function reanimate()
 		tclear(refreshedjoints)
 
 		local idlerv=v3(sin((sine-0.0375)*16),sin(sine*16),sin((sine+0.075)*16))
-		local idleoff=idlerv*0.001
+		local idleoff=idlerv*0.0015
 
 		local claimpos=insGet(primarypart,"Position")
 		local claimposY=v3Get(claimpos,"Y")
@@ -1511,26 +1499,41 @@ local function reanimate()
 					end
 					local lastpos=i.l
 					local vel=(cfGet(v,"Position")-lastpos)/delta
-					if v3Get(vel,"Magnitude")<0.15 then
+					local mag=v3Get(vel,"Magnitude")
+					if mag<0.15 then
 						if placeholder then
 							insSet(placeholder,"Parent",nil)
 						end
+						i.l=cfGet(v,"Position")
 						v=cfAdd(v,idleoff)
-					elseif v3Get(vel,"Magnitude")>speedlimit then
+					elseif mag>speedlimit then
 						if placeholder then
 							insSet(placeholder,"CFrame",v)
 							insSet(placeholder,"Parent",ws)
 						end
 						vel=v3Get(vel,"Unit")*speedlimit
-						v=cfAdd(cfGet(v,"Rotation"),lastpos+vel*delta)
+						local newpos=lastpos+vel*delta
+						v=cfAdd(cfGet(v,"Rotation"),newpos)
+						i.l=newpos
 					elseif placeholder then
 						insSet(placeholder,"Parent",nil)
+						i.l=cfGet(v,"Position")
 					end
-					i.l=cfGet(v,"Position")
 					local claimtime=i.c
 					if claimtime then
 						if sine-claimtime<retVelTime then
-							insSet(part,"AssemblyLinearVelocity",(claimpos-cfGet(v,"Position"))*v3_101/getFallingTime(cfGet(v,"Y"),claimposY,rGravity)+v3_net)
+							local Ydiff=cfGet(v,"Y")-claimposY
+							local velY=25.01
+							local fallingTime=0
+							while (Ydiff>0) or (velY>0) do
+								fallingTime=fallingTime+0.025
+								if fallingTime>0.6 then
+									break
+								end
+								velY=velY-velYdelta
+								Ydiff=Ydiff+(velY*0.025)
+							end
+							insSet(part,"AssemblyLinearVelocity",(claimpos-cfGet(v,"Position"))*v3_101/fallingTime+v3_net)
 						else
 							insSet(part,"AssemblyLinearVelocity",getNetlessVelocity(vel*noYvelTime+xzvel))
 						end
