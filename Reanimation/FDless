@@ -233,7 +233,7 @@ end
 local emptyfunction=function() end
 
 local allowshiftlock=allowshiftlock~=false
-local ctrltp=ctrltp==true
+local ctrltp=ctrltp~=false
 local placeholders=placeholders~=false
 local clickfling=clickfling==true
 local highlightflingtargets=highlightflingtargets~=false
