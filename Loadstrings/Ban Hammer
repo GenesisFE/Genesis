@@ -16,7 +16,7 @@ https://discord.com/invite/aEZpBEHgMT
 allowshiftlock = true --adds shiftlock to patchma rig
 ctrltp = true --adds control click tp
 placeholders = true --adds transparent parts showing your hats when you don't have real ones
-clickfling = true --adds click flinging regardless of attacks
+clickfling = false --adds click flinging regardless of attacks
 highlightflingtargets = true --highlight fling
 discharscripts = true --disable character scripts
 flingchangestate = true --fling with whole body
