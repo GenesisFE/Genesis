@@ -147,6 +147,7 @@ local accessorylimbs={
 	{meshid="14241018198",textureid="",C0=cf_0,Name="Torso"},
 	{meshid="13421774668",textureid="",C0=cf_0,Name="Torso"},
 	{meshid="18640899369",textureid="",C0=cf_0,Name="Torso"},
+	{meshid="110684113028749",textureid="",C0=cf_0,Name="Torso"},
 
 	{meshid="11263221350",textureid="11263219250",C0=angles(-1.5707963267948966,0,1.5707963267948966),Name="Right Leg"},
 	{meshid="11159370334",textureid="11159284657",C0=angles(1.5707963267948966,0,1.5707963267948966),Name="Left Leg"},
@@ -165,6 +166,9 @@ local accessorylimbs={
 
 	{meshid="14768684979",textureid="",C0=angles(0,0,1.5707963267948966),Name="Left Arm"},
 	{meshid="14768684979",textureid="",C0=angles(0,0,1.5707963267948966),Name="Right Arm"},
+	
+	{meshid="90736849096372",textureid="",C0=angles(0,0,1.5707963267948966),Name="Left Arm"},
+	{meshid="105141400603933",textureid="",C0=angles(0,0,1.5707963267948966),Name="Right Arm"},
 
 	{meshid="13831073174",textureid="",C0=cfMul(cf(0.017,0,-0.23),angles(-1.4835298641951802,-0.15707963267948966,2.199114857512855)),Name="Left Arm"},
 	{meshid="13839903766",textureid="",C0=cfMul(cf(0,-0.62,-0.01),angles(1.6580627893946132,0.15707963267948966,-2.199114857512855)),Name="Right Arm"},
