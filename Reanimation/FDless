@@ -142,20 +142,20 @@ local Inverse=cfGet(cf_0,"Inverse")
 local Lerp=cfGet(cf_0,"Lerp")
 
 local accessorylimbs={
-	
+
 	-- unknown head
 	{meshid="11601535857",textureid="",C0=angles(0,3.141592653589793,0),Name="Head"},
 
 	-- patchma gear arms
 	{meshid="13831073174",textureid="",C0=cfMul(cf(0.017,0,-0.23),angles(-1.4835298641951802,-0.15707963267948966,2.199114857512855)),Name="Left Arm"},
 	{meshid="13839903766",textureid="",C0=cfMul(cf(0,-0.62,-0.01),angles(1.6580627893946132,0.15707963267948966,-2.199114857512855)),Name="Right Arm"},
-	
+
 	-- patchma yellow leg
 	{meshid="11159370334",textureid="11159285454",C0=angles(1.5707963267948966,0,1.5707963267948966),Name="Left Leg"},
-	
+
 	-- patchma lego piece leg
 	{meshid="12652772399",textureid="12652775021",C0=cf(0,-0.125,0),Name="Right Leg"},
-	
+
 	-- offsale white rig
 	-- a ton of offsaled black torso's
 	{meshid="14768666349",textureid="",C0=cf_0,Name="Torso"},
@@ -165,7 +165,7 @@ local accessorylimbs={
 	{meshid="14255522247",textureid="",C0=angles(-1.5707963267948966,0,1.5707963267948966),Name="Right Leg"},
 	{meshid="14768684979",textureid="",C0=angles(0,0,1.5707963267948966),Name="Left Arm"},
 	{meshid="14768684979",textureid="",C0=angles(0,0,1.5707963267948966),Name="Right Arm"},
-	
+
 	-- og fur body, r15 arms, smiley legs rig
 	{meshid="13953154391",textureid="",C0=cf_0,Name="Head"},
 	{meshid="13778226115",textureid="",C0=cf_0,Name="Torso"},
@@ -173,7 +173,7 @@ local accessorylimbs={
 	{meshid="11263221350",textureid="11263219250",C0=angles(-1.5707963267948966,0,1.5707963267948966),Name="Right Leg"},
 	{meshid="12344207333",textureid="",C0=angles(2,0,0),Name="Left Arm"},
 	{meshid="12344206657",textureid="",C0=angles(2,0,0),Name="Right Arm"},
-	
+
 	-- torso for both "white limbs black torso rig" and "black rig"
 	{meshid="110684113028749",textureid="",C0=cf_0,Name="Torso"},
 	-- white limbs black torso rig
@@ -194,7 +194,7 @@ local accessorylimbs={
 	{meshid="125405780718494",textureid="",C0=angles(-1.5707963267948966,0,1.5707963267948966),Name="Right Leg"},
 	{meshid="125405780718494",textureid="",C0=angles(1.5707963267948966,0,1.5707963267948966),Name="Left Arm"},
 	{meshid="125405780718494",textureid="",C0=angles(-1.5707963267948966,0,1.5707963267948966),Name="Right Arm"},
-	
+
 	-- meshless rig
 	{meshid="13953094351",textureid="",C0=cf_0,Name="Head"},
 	{meshid="127552124837034",textureid="",C0=angles(0,0,1.5707963267948966),Name="Torso"},
@@ -271,6 +271,7 @@ local makeplaceholder=function(v)
 end
 local emptyfunction=function() end
 
+local fling=fling~=false
 local allowshiftlock=allowshiftlock~=false
 local ctrltp=ctrltp~=false
 local placeholders=placeholders~=false
@@ -1124,47 +1125,52 @@ local reanimate=function()
 			end
 		end
 	end)
-
-	local predictionfling=function(target)
-		if not c then
-			return false
-		end
-		if typeof(target)~="Instance" then 
-			target=insGet(mouse,"Target")
-			if not target then
+	
+	local predictionfling=nil
+	if fling then
+		predictionfling=function(target)
+			if not c then
 				return false
 			end
-		end
-		if not IsDescendantOf(target,ws) then
-			return false
-		end
-		if IsA(target,"Humanoid") or IsA(target,"BasePart") then 
-			target=insGet(target,"Parent") 
-			if IsA(target,"Accessory") then
-				target=insGet(target,"Parent")
+			if typeof(target)~="Instance" then 
+				target=insGet(mouse,"Target")
+				if not target then
+					return false
+				end
 			end
+			if not IsDescendantOf(target,ws) then
+				return false
+			end
+			if IsA(target,"Humanoid") or IsA(target,"BasePart") then 
+				target=insGet(target,"Parent") 
+				if IsA(target,"Accessory") then
+					target=insGet(target,"Parent")
+				end
+			end
+			if (target==c) or (not IsA(target,"Model")) then
+				return false
+			end
+			local targetpart=gp(target,"HumanoidRootPart","BasePart") or gp(target,"Torso","BasePart") or gp(target,"UpperTorso","BasePart")
+			if (not targetpart) or (flingtable[targetpart]~=nil) then
+				return false
+			end
+			if highlightflingtargets then
+				local h=i("Highlight")
+				insSet(h,"Name",rs())
+				insSet(h,"Adornee",target)
+				insSet(h,"FillColor",c3(1,0,0))
+				insSet(h,"OutlineColor",c3(0,0,0))
+				insSet(h,"FillTransparency",0.5)
+				insSet(h,"OutlineTransparency",0)
+				insSet(h,"Parent",pg)
+				flingtable[targetpart]=h
+			else
+				flingtable[targetpart]=false
+			end
+			return true
 		end
-		if (target==c) or (not IsA(target,"Model")) then
-			return false
-		end
-		local targetpart=gp(target,"HumanoidRootPart","BasePart") or gp(target,"Torso","BasePart") or gp(target,"UpperTorso","BasePart")
-		if (not targetpart) or (flingtable[targetpart]~=nil) then
-			return false
-		end
-		if highlightflingtargets then
-			local h=i("Highlight")
-			insSet(h,"Name",rs())
-			insSet(h,"Adornee",target)
-			insSet(h,"FillColor",c3(1,0,0))
-			insSet(h,"OutlineColor",c3(0,0,0))
-			insSet(h,"FillTransparency",0.5)
-			insSet(h,"OutlineTransparency",0)
-			insSet(h,"Parent",pg)
-			flingtable[targetpart]=h
-		else
-			flingtable[targetpart]=false
-		end
-		return true
+	else
+		predictionfling=emptyfunction
 	end
 
 	local clickConnection=nil
