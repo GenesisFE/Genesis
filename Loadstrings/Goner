@@ -13,6 +13,7 @@ https://discord.com/invite/aEZpBEHgMT
 --           FDless Options           --
 --====================================--
 
+fling = true --toggle fling
 allowshiftlock = true --adds shiftlock to patchma rig
 ctrltp = true --adds control click tp
 placeholders = true --adds transparent parts showing your hats when you don't have real ones
