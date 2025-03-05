@@ -1,5 +1,5 @@
 --[[
-FDless Reanimate from Patchma Hub V45
+FDless Reanimate from Patchma Hub V43
 
 	███    ███ ██    ██ ██     ██  ██████  ██████  ██      ██████  
 	████  ████  ██  ██  ██     ██ ██    ██ ██   ██ ██      ██   ██ 
@@ -22,12 +22,16 @@ local sfind=string.find
 local supper=string.upper
 local mrandom=math.random
 local sin=math.sin
+local cos=math.cos
+local abs=math.abs
+local rad=math.rad
 local min=math.min
 local clamp=math.clamp
 local tinsert=table.insert
 local tclear=table.clear
 local tclone=table.clone
 local tfind=table.find
+local tunpack=table.unpack
 
 --the script doesnt have to read global varaibles every time to get them
 --why not have them saved in local varaibles for faster access times
@@ -45,34 +49,38 @@ local c3=Color3.new
 local cf=CFrame.new
 local cfl=CFrame.lookAt
 local angles=CFrame.Angles
+local u2=UDim2.new 
 local e=Enum 
 local rp=RaycastParams.new 
+local cs=ColorSequence.new 
+local csk=ColorSequenceKeypoint.new 
 
 local sine=osclock()
 local deltaTime=0
-local v3_0=v3()
+local v3_0=v3(0,0,0)
 local v3_101=v3(1,0,1)
 local v3_010=v3(0,1,0)
-local cf_0=cf()
+local v3_001=v3(0,0,1)
+local cf_0=cf(0,0,0)
 local v3_xz=v3_101*10
 local v3_xzL=v3_101*250.1
 local v3_net=v3_010*25.01
-local pdloadedtime=nil
 
 --not "local function rs" to not assign debug names
-local rs=function()
-	local s=""
-	for i=1,mrandom(8,15) do
-		if mrandom(2)==2 then
-			s=s..schar(mrandom(65,90))
-		else
-			s=s..schar(mrandom(97,122))
-		end
-	end
-	return s
+local rs=function(l) 
+	l=l or mrandom(8,15) 
+	local s="" 
+	for i=1,l do 
+		if mrandom(1,2)==1 then 
+			s=s..schar(mrandom(65,90)) 
+		else 
+			s=s..schar(mrandom(97,122)) 
+		end 
+	end 
+	return s 
 end
 
---it runs even faster if u call __index and __newindex metamethods directly
+--it runs even faster if u call __index and __newindex of metatables of userdata directly
 local getMetamethodFromErrorStack=function(userdata,f,test)
 	local ret=nil
 	xpcall(f,function()
@@ -113,10 +121,9 @@ local sg=FindFirstChildOfClass(game,"StarterGui")
 local lp=insGet(plrs,"LocalPlayer")
 local pg=FindFirstChildOfClass(lp,"PlayerGui")
 local mouse=insGet(lp,"GetMouse")(lp)
-local cdsb=insGet(lp,"ConnectDiedSignalBackend")
-local rst=insGet(plrs,"RespawnTime")+0.07 --1/15
-local preanimation=insGet(rus,"PreAnimation")
+local stepped=insGet(rus,"Stepped")
 local heartbeat=insGet(rus,"Heartbeat")
+local renderstepped=insGet(rus,"RenderStepped")
 
 local GetPlayers=insGet(plrs,"GetPlayers")
 local SetCoreGuiEnabled=insGet(sg,"SetCoreGuiEnabled")
@@ -125,6 +132,7 @@ local Raycast=insGet(ws,"Raycast")
 local Connect=heartbeat.Connect
 local Disconnect=Connect(GetPropertyChangedSignal(game,"CreatorId"),type).Disconnect
 local Wait=heartbeat.Wait
+local GetMouseLocation=insGet(uis,"GetMouseLocation")
 local GetFocusedTextBox=insGet(uis,"GetFocusedTextBox")
 local GetMouseDelta=insGet(uis,"GetMouseDelta")
 local IsMouseButtonPressed=insGet(uis,"IsMouseButtonPressed")
@@ -133,7 +141,6 @@ local IsKeyDown=insGet(uis,"IsKeyDown")
 local Inverse=cfGet(cf_0,"Inverse")
 local Lerp=cfGet(cf_0,"Lerp")
 
-local rad=math.rad
 local accessorylimbs={
 
 	-- unknown head
@@ -235,11 +242,14 @@ local timegp=function(p,n,c,t)
 				return v
 			end
 		end
-		Wait(preanimation)
+		Wait(stepped)
 	end
 	return nil
 end
 local makeplaceholder=function(v)
+	if typeof(v)~="Instance" then
+		return nil
+	end
 	if not insGet(v,"Archivable") then
 		insSet(v,"Archivable",true)
 	end
@@ -256,11 +266,11 @@ local makeplaceholder=function(v)
 	insSet(v,"Anchored",true)
 	insSet(v,"CanCollide",false)
 	insSet(v,"Transparency",0.25)
+	insSet(v,"Parent",ws)
 	return v
 end
 local emptyfunction=function() end
 
-local permadeath=permadeath==true
 local fling=fling~=false
 local allowshiftlock=allowshiftlock~=false
 local ctrltp=ctrltp~=false
@@ -274,57 +284,19 @@ local breakjointsmethod=(type(breakjointsmethod)=="number" and breakjointsmethod
 local simrad=simrad~=false
 local hidedeatheffect=hidedeatheffect~=false
 
-local replicatesignal=replicatesignal
-
 local c=nil
 local stopreanimate=function() 
 	if c then
 		c=nil
-		if replicatesignal then
-			replicatesignal(cdsb)
-		end
 		return true
 	end
 	return false
 end
-if permadeath then
-    if replicatesignal then
-        replicatesignal(cdsb)
-        pdloadedtime=osclock()+rst
-        local lastc=nil
-        local hdied=function()
-            if not c then
-                replicatesignal(cdsb)
-                pdloadedtime=osclock()+rst
-            end
-        end
-        Connect(GetPropertyChangedSignal(lp,"Character"),function()
-            local c=lp.Character
-            if c and c~=lastc then
-                lastc=c
-                replicatesignal(cdsb)
-                pdloadedtime=osclock()+rst
-                while lastc==c do
-                    local h=FindFirstChildOfClass(c,"Humanoid")
-                    if h then
-                        Connect(insGet(h,"Died"),hdied)
-                        break
-                    end
-                    Wait(preanimation)
-                end
-            end
-        end)
-    else
-        sg:SetCore("SendNotification",{Title="Permadeath",Text="Your executor does not support permadeath! Please see #supported-executors channel."})
-    end
-else
-    replicatesignal=nil
-    pdloadedtime=nil
-end
 local reanimate=function()
 	--[[
 		FDless reanimate by MyWorld
-		optimize the optimized
+		aka no client sided instances
+		"what else do i optimize here"
 	]]
 
 	local novoid = true --prevents parts from going under workspace.FallenPartsDestroyHeight if you control them
@@ -515,17 +487,9 @@ local reanimate=function()
 	}
 
 	local getPart=function(name,blacklist)
-		if blacklist then
-			for i,v in next,cframes do
-				if (i.Name==name) and not tfind(blacklist,i) then
-					return i
-				end
-			end
-		else
-			for i,v in next,cframes do
-				if i.Name==name then
-					return i
-				end
+		for i,v in next,cframes do
+			if (i.Name==name) and not (blacklist and tfind(blacklist,i)) then
+				return i
 			end
 		end
 		return nil
@@ -586,7 +550,7 @@ local reanimate=function()
 	end
 
 	local raycastparams=rp()
-	raycastparams.FilterType=e.RaycastFilterType.Exclude
+	raycastparams.FilterType=e.RaycastFilterType.Blacklist
 	raycastparams.RespectCanCollide=true
 	local rayfilter={}
 	local characters={}
@@ -650,17 +614,20 @@ local reanimate=function()
 					else
 						return
 					end
+					local found=false
 					for i,_ in next,cframes do
 						if (meshid==i.m) and (textureid==i.t) then
 							local p1=i.p
 							if p1 and IsDescendantOf(p1,c) then
 								if p1==p then
-									return
+									found=true
+									break
 								end
 							else
+								found=true
 								i.p=p
 								makePartCons(p,i)
-								return
+								break
 							end
 						else
 							local j=i.j
@@ -676,32 +643,36 @@ local reanimate=function()
 								j.C1=v1[2]
 								j.Part1=v1[1]
 								tinsert(joints,j)
-								return
+								found=true
+								break
 							end
 						end
 					end
-					for i,l in next,accessorylimbs do
-						if l.p and sfind(meshid,l.meshid) and sfind(textureid,l.textureid) then
+					if not found then
+						for i,l in next,accessorylimbs do
+							if l.p and sfind(meshid,l.meshid) and sfind(textureid,l.textureid) then
+								local t={Name=insGet(p,"Name"),l=insGet(p,"Position"),m=meshid,t=textureid,p=p}
+								makePartCons(p,t)
+								if placeholders then
+									t.v=makeplaceholder(p)
+								end
+								cframes[t]=insGet(p,"CFrame")
+								tinsert(joints,{Part0=t,Part1=l.p,C0=l.C0,C1=cf_0})
+								l.p=nil
+								found=true
+								break
+							end
+						end
+						if not found then
 							local t={Name=insGet(p,"Name"),l=insGet(p,"Position"),m=meshid,t=textureid,p=p}
 							makePartCons(p,t)
 							if placeholders then
 								t.v=makeplaceholder(p)
-								t.b=false
 							end
 							cframes[t]=insGet(p,"CFrame")
-							tinsert(joints,{Part0=t,Part1=l.p,C0=l.C0,C1=cf_0})
-							l.p=nil
-							return
+							tinsert(joints,{Part0=t,Part1=v1[1],C0=insGet(v,"CFrame"),C1=v1[2]})
 						end
 					end
-					local t={Name=insGet(p,"Name"),l=insGet(p,"Position"),m=meshid,t=textureid,p=p}
-					makePartCons(p,t)
-					if placeholders then
-						t.v=makeplaceholder(p)
-						t.b=false
-					end
-					cframes[t]=insGet(p,"CFrame")
-					tinsert(joints,{Part0=t,Part1=v1[1],C0=insGet(v,"CFrame"),C1=v1[2]})
 				end
 			end
 		end
@@ -734,25 +705,10 @@ local reanimate=function()
 					c=newc
 					local fi,fv=next(flingtable)
 					if fi then
-						if replicatesignal and not pdloadedtime then
-							replicatesignal(cdsb)
-							pdloadedtime=osclock()+rst
-						end
-						if flingchangestate==3 then
+						if flingchangestate then
 							local hum=FindFirstChildOfClass(c,"Humanoid")
 							if hum then
 								insGet(hum,"ChangeState")(hum,e.HumanoidStateType.Physics)
-								insGet(hum,"SetStateEnabled")(hum,e.HumanoidStateType.Seated,false)
-							end
-						elseif flingchangestate==1 then
-							local hum=FindFirstChildOfClass(c,"Humanoid")
-							if hum then
-								insGet(hum,"ChangeState")(hum,e.HumanoidStateType.Physics)
-							end
-						elseif flingchangestate==2 then
-							local hum=FindFirstChildOfClass(c,"Humanoid")
-							if hum then
-								insGet(hum,"SetStateEnabled")(hum,e.HumanoidStateType.Seated,false)
 							end
 						end
 						for i,v in next,tclone(flingtable) do
@@ -788,7 +744,7 @@ local reanimate=function()
 						insSet(hrp,"AssemblyLinearVelocity",v3_0)
 						insSet(hrp,"AssemblyAngularVelocity",v3_0)
 						insSet(hrp,"CFrame",cfr)
-						twait(0.17)
+						twait(0.16)
 					end
 					if respawntp==1 then
 						local startpos=pos+v3(mrandom(-32,32),0,mrandom(-32,32))
@@ -815,17 +771,14 @@ local reanimate=function()
 						insSet(hrp,"CFrame",startpos)
 						insSet(hrp,"AssemblyLinearVelocity",v3_0)
 						insSet(hrp,"AssemblyAngularVelocity",v3_0)
-						twait(0.17)
+						twait(0.16)
 					elseif respawntp==2 then
 						insSet(hrp,"CFrame",cfAdd(cfr,cfGet(cfr,"RightVector")*3.5-cfGet(cfr,"LookVector")*3.5))
 						insSet(hrp,"AssemblyLinearVelocity",v3_0)
 						insSet(hrp,"AssemblyAngularVelocity",v3_0)
-						twait(0.17)
+						twait(0.16)
 					elseif respawntp==3 then
-						local t=osclock()+0.17
-						if pdloadedtime and pdloadedtime>t then
-							t=pdloadedtime
-						end
+						local t=osclock()+0.16
 						local startcf=cfAdd(cfMul(cfGet(cfr,"Rotation"),angles(1.5707963267948966,0,0)),pos*v3_101+v3_010*min(fpdh+30,v3Get(pos,"Y")-5))
 						while twait() do
 							insSet(hrp,"CFrame",startcf)
@@ -842,12 +795,6 @@ local reanimate=function()
 					primarypart=insGet(newc,"PrimaryPart") or hrp
 					if hidedeatheffect and GetCoreGuiEnabled(sg,enumH) then
 						SetCoreGuiEnabled(sg,enumH,false)
-					end
-					if pdloadedtime then
-						if (osclock()<pdloadedtime) then
-							twait(pdloadedtime-osclock())
-						end
-						pdloadedtime=nil
 					end
 					if breakjointsmethod==1 then
 						insGet(newc,"BreakJoints")(newc)
@@ -908,7 +855,7 @@ local reanimate=function()
 		end
 	end
 
-	local mradN05=-0.008726646259971648
+	local mradN05=rad(-0.5)
 	local KeyCode=e.KeyCode
 	local enumMB2=e.UserInputType.MouseButton2
 	local enumMLCP=e.MouseBehavior.LockCurrentPosition
@@ -1178,50 +1125,52 @@ local reanimate=function()
 			end
 		end
 	end)
-
-	local predictionfling=function(target)
-		if not c then
-			return false
-		end
-		if typeof(target)~="Instance" then 
-			target=insGet(mouse,"Target")
-			if not target then
+	
+	local predictionfling=nil
+	if fling then
+		predictionfling=function(target)
+			if not c then
 				return false
 			end
-		end
-		if not IsDescendantOf(target,ws) then
-			return false
-		end
-		if IsA(target,"BasePart") or IsA(target,"Humanoid") then 
-			target=insGet(target,"Parent") 
-			if IsA(target,"Accessory") then
-				target=insGet(target,"Parent")
+			if typeof(target)~="Instance" then 
+				target=insGet(mouse,"Target")
+				if not target then
+					return false
+				end
 			end
+			if not IsDescendantOf(target,ws) then
+				return false
+			end
+			if IsA(target,"Humanoid") or IsA(target,"BasePart") then 
+				target=insGet(target,"Parent") 
+				if IsA(target,"Accessory") then
+					target=insGet(target,"Parent")
+				end
+			end
+			if (target==c) or (not IsA(target,"Model")) then
+				return false
+			end
+			local targetpart=gp(target,"HumanoidRootPart","BasePart") or gp(target,"Torso","BasePart") or gp(target,"UpperTorso","BasePart")
+			if (not targetpart) or (flingtable[targetpart]~=nil) then
+				return false
+			end
+			if highlightflingtargets then
+				local h=i("Highlight")
+				insSet(h,"Name",rs())
+				insSet(h,"Adornee",target)
+				insSet(h,"FillColor",c3(1,0,0))
+				insSet(h,"OutlineColor",c3(0,0,0))
+				insSet(h,"FillTransparency",0.5)
+				insSet(h,"OutlineTransparency",0)
+				insSet(h,"Parent",pg)
+				flingtable[targetpart]=h
+			else
+				flingtable[targetpart]=false
+			end
+			return true
 		end
-		if (not IsA(target,"Model")) or (target==c) then
-			return false
-		end
-		local targetpart=gp(target,"HumanoidRootPart","BasePart") or gp(target,"Torso","BasePart") or gp(target,"UpperTorso","BasePart")
-		if (not targetpart) or (flingtable[targetpart]~=nil) then
-			return false
-		end
-		if replicatesignal then
-		    replicatesignal(cdsb)
-		end
-		if highlightflingtargets then
-			local h=i("Highlight")
-			insSet(h,"Name",rs())
-			insSet(h,"Adornee",target)
-			insSet(h,"FillColor",c3(1,0,0))
-			insSet(h,"OutlineColor",c3(1,0,0))
-			insSet(h,"FillTransparency",0.5)
-			insSet(h,"OutlineTransparency",0)
-			insSet(h,"Parent",pg)
-			flingtable[targetpart]=h
-		else
-			flingtable[targetpart]=false
-		end
-		return true
+	else
+		predictionfling=emptyfunction
 	end
 
 	local clickConnection=nil
@@ -1608,9 +1557,8 @@ local reanimate=function()
 		refreshjointsI(rootpart)
 		tclear(refreshedjoints)
 
-		local sine15=sine*15
-		local idlerv=v3(sin(sine15),sin(sine15+1.0471975511965976),sin(sine15+2.0943951023931953))
-		local idleoff=idlerv*0.003910064697265625 --0.0156402587890625/4
+		local idlerv=v3(sin((sine-0.0375)*16),sin(sine*16),sin((sine+0.075)*16))
+		local idleoff=idlerv*0.0015
 
 		local claimpos=insGet(primarypart,"Position")
 		local claimposY=v3Get(claimpos,"Y")
@@ -1620,37 +1568,29 @@ local reanimate=function()
 			if part then
 				if insGet(part,"ReceiveAge")==0 then
 					local placeholder=i.v
-					local vpos=cfGet(v,"Position")
-					if novoid and (v3Get(vpos,"Y")<novoid) then
-						v=cfAdd(v,v3_010*(novoid-v3Get(vpos,"Y")))
+					if novoid and (cfGet(v,"Y")<novoid) then
+						v=cfAdd(v,v3_010*(novoid-cfGet(v,"Y")))
 					end
 					local lastpos=i.l
-					local vel=(vpos-lastpos)/delta
+					local vel=(cfGet(v,"Position")-lastpos)/delta
 					local mag=v3Get(vel,"Magnitude")
-					if mag<0.11730194091796875 then --0.0156402587890625*15/2
-						if placeholder and i.b then
+					if mag<0.15 then
+						if placeholder then
 							insSet(placeholder,"Parent",nil)
-							i.b=false
 						end
 						i.l=cfGet(v,"Position")
 						v=cfAdd(v,idleoff)
 					elseif mag>speedlimit then
 						if placeholder then
 							insSet(placeholder,"CFrame",v)
-							if not i.b then
-								insSet(placeholder,"Parent",ws)
-								i.b=true
-							end
+							insSet(placeholder,"Parent",ws)
 						end
 						vel=v3Get(vel,"Unit")*speedlimit
 						local newpos=lastpos+vel*delta
 						v=cfAdd(cfGet(v,"Rotation"),newpos)
 						i.l=newpos
-					else
-						if placeholder and i.b then
-							insSet(placeholder,"Parent",nil)
-							i.b=false
-						end
+					elseif placeholder then
+						insSet(placeholder,"Parent",nil)
 						i.l=cfGet(v,"Position")
 					end
 					local claimtime=i.c
@@ -1693,20 +1633,14 @@ local reanimate=function()
 					local placeholder=i.v
 					if placeholder then
 						insSet(placeholder,"CFrame",v)
-						if not i.b then
-							insSet(placeholder,"Parent",ws)
-							i.b=true
-						end
+						insSet(placeholder,"Parent",ws)
 					end
 				end
 			else
 				local placeholder=i.v
 				if placeholder then
 					insSet(placeholder,"CFrame",v)
-					if not i.b then
-						insSet(placeholder,"Parent",ws)
-						i.b=true
-					end
+					insSet(placeholder,"Parent",ws)
 				end
 			end
 		end
@@ -1729,17 +1663,7 @@ local reanimate=function()
 	local raycastlegs=function() --this returns 2 values: right leg raycast offset, left leg raycast offset
 		local rY=Raycast(ws,cfGet(cfMul(cfr,legcfR),"Position"),raydir,raycastparams)
 		local lY=Raycast(ws,cfGet(cfMul(cfr,legcfL),"Position"),raydir,raycastparams)
-		if rY then
-			if lY then
-				return v3Get(rY.Position,"Y")-(v3Get(pos,"Y")-3),v3Get(lY.Position,"Y")-(v3Get(pos,"Y")-3)
-			else
-				return v3Get(rY.Position,"Y")-(v3Get(pos,"Y")-3),0
-			end
-		elseif lY then
-			return 0,v3Get(lY.Position,"Y")-(v3Get(pos,"Y")-3)
-		else
-			return 0,0
-		end
+		return rY and (v3Get(rY.Position,"Y")-(v3Get(pos,"Y")-3)) or 0,lY and (v3Get(lY.Position,"Y")-(v3Get(pos,"Y")-3)) or 0
 	end
 
 	local velbycfrvec=function() --this returns 2 values: forward/backwards movement (from -1 to 1), right/left movement (from -1 to 1)
@@ -1776,7 +1700,7 @@ local reanimate=function()
 	end
 
 	local glitchJoint=function(joint,targetGlitchTime,delayFrom,delayTo,radiansFrom,radiansTo) 
-		if sine>targetGlitchTime then --example usage: local glitchtime=0 addMode("x",{idle=function() glitchtime=glitchJoint(joint,glitchtime,0.2,0.4,-0.1,0.1) end})
+		if sine>targetGlitchTime then --local glitchtime=0 addMode("x",{idle=function() glitchtime=glitchJoint(joint,glitchtime,0.2,0.4,-0.1,0.1) end})
 			radiansFrom=radiansFrom*100
 			radiansTo=radiansTo*100
 			joint.C0=cfMul(joint.C0,angles(mrandom(radiansFrom,radiansTo)/100,mrandom(radiansFrom,radiansTo)/100,mrandom(radiansFrom,radiansTo)/100)) 
@@ -1852,8 +1776,7 @@ local reanimate=function()
 		getVel=getVel,
 		getCamCF=getCamCF,
 		isFirstPerson=isFirstPerson,
-		setHipHeight=setHipHeight,
-        characters=characters,
+		characters=characters,
 		refreshrayfilter=refreshrayfilter
 	}
 end
