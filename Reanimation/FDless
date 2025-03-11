@@ -260,7 +260,7 @@ local makeplaceholder=function(v)
 end
 local emptyfunction=function() end
 
-local permadeath=permadeath~=false
+local permadeath=permadeath==true
 local fling=fling~=false
 local allowshiftlock=allowshiftlock~=false
 local ctrltp=ctrltp~=false
