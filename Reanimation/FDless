@@ -44,7 +44,7 @@ local v3=Vector3.new
 local c3=Color3.new 
 local cf=CFrame.new
 local cfl=CFrame.lookAt
-local angles=CFrame.Angles
+local angles=CFrame.fromEulerAngles --faster than .Angles
 local e=Enum 
 local rp=RaycastParams.new 
 
