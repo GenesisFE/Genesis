@@ -1179,51 +1179,56 @@ local reanimate=function()
 		end
 	end)
 
-	local predictionfling=function(target)
-		if not c then
-			return false
-		end
-		if typeof(target)~="Instance" then 
-			target=insGet(mouse,"Target")
-			if not target then
+	local predictionfling=nil
+	if fling then
+		predictionfling=function(target)
+			if not c then
 				return false
 			end
-		end
-		if not IsDescendantOf(target,ws) then
-			return false
-		end
-		if IsA(target,"BasePart") or IsA(target,"Humanoid") then 
-			target=insGet(target,"Parent") 
-			if IsA(target,"Accessory") then
-				target=insGet(target,"Parent")
+			if typeof(target)~="Instance" then 
+				target=insGet(mouse,"Target")
+				if not target then
+					return false
+				end
 			end
-		end
-		if (not IsA(target,"Model")) or (target==c) then
-			return false
-		end
-		local targetpart=gp(target,"HumanoidRootPart","BasePart") or gp(target,"Torso","BasePart") or gp(target,"UpperTorso","BasePart")
-		if (not targetpart) or (flingtable[targetpart]~=nil) then
-			return false
-		end
-		if replicatesignal then
-		    replicatesignal(cdsb)
-		end
-		if highlightflingtargets then
-			local h=i("Highlight")
-			insSet(h,"Name",rs())
-			insSet(h,"Adornee",target)
-			insSet(h,"FillColor",c3(1,0,0))
-			insSet(h,"OutlineColor",c3(1,0,0))
-			insSet(h,"FillTransparency",0.5)
-			insSet(h,"OutlineTransparency",0)
-			if not pcall(insSet,h,"Parent",FindFirstChildOfClass(game,"CoreGui")) then
-				insSet(h,"Parent",pg)
+			if not IsDescendantOf(target,ws) then
+				return false
 			end
-			flingtable[targetpart]=h
-		else
-			flingtable[targetpart]=false
+			if IsA(target,"BasePart") or IsA(target,"Humanoid") then 
+				target=insGet(target,"Parent") 
+				if IsA(target,"Accessory") then
+					target=insGet(target,"Parent")
+				end
+			end
+			if (not IsA(target,"Model")) or (target==c) then
+				return false
+			end
+			local targetpart=gp(target,"HumanoidRootPart","BasePart") or gp(target,"Torso","BasePart") or gp(target,"UpperTorso","BasePart")
+			if (not targetpart) or (flingtable[targetpart]~=nil) then
+				return false
+			end
+			if replicatesignal then
+				replicatesignal(cdsb)
+			end
+			if highlightflingtargets then
+				local h=i("Highlight")
+				insSet(h,"Name",rs())
+				insSet(h,"Adornee",target)
+				insSet(h,"FillColor",c3(1,0,0))
+				insSet(h,"OutlineColor",c3(1,0,0))
+				insSet(h,"FillTransparency",0.5)
+				insSet(h,"OutlineTransparency",0)
+				if not pcall(insSet,h,"Parent",FindFirstChildOfClass(game,"CoreGui")) then
+					insSet(h,"Parent",pg)
+				end
+				flingtable[targetpart]=h
+			else
+				flingtable[targetpart]=false
+			end
+			return true
 		end
-		return true
+	else
+		predictionfling=emptyfunction
 	end
 
 	local clickConnection=nil
