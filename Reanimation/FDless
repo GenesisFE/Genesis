@@ -255,6 +255,7 @@ local makeplaceholder=function(v)
 	insSet(v,"Name",rs())
 	insSet(v,"Anchored",true)
 	insSet(v,"CanCollide",false)
+	insSet(v,"CanQuery",false)
 	insSet(v,"Transparency",0.25)
 	return v
 end
