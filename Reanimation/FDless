@@ -211,6 +211,9 @@ local accessorylimbs={
 	{meshid="",textureid="135650240593878",C0=angles(0,0,1.5707963267948966),Name="Left Arm"},
 	{meshid="",textureid="135650240593878",C0=angles(0,0,1.5707963267948966),Name="Right Arm"},
 
+	-- white torso
+	{meshid="126825022897778",textureid="",C0=cf_0,Name="Torso"},
+
 	-- free rig
 	{meshid="4819720316",textureid="4819722776",C0=angles(0,0,rad(15)),Name="Torso"},
 	{meshid="4094864753",textureid="4094881938",C0=angles(0,0,rad(-90)),Name="Left Leg"},
