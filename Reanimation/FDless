@@ -284,7 +284,7 @@ local c=nil
 local stopreanimate=function() 
 	if c then
 		c=nil
-		if replicatesignal then
+		if permadeath and replicatesignal then
 			replicatesignal(cdsb)
 		end
 		return true
@@ -319,10 +319,10 @@ if permadeath then
             end
         end)
     else
-        sg:SetCore("SendNotification",{Title="Permadeath",Text="Your executor does not support permadeath! Please see #supported-executors channel."})
+        sg:SetCore("SendNotification",{Title="Permadeath",Text="Your executor does not support ReplicateSignal! Please see #supported-clients channel."})
     end
 else
-    replicatesignal=nil
+    --replicatesignal=nil
     pdloadedtime=nil
 end
 local reanimate=function()
@@ -738,7 +738,7 @@ local reanimate=function()
 					c=newc
 					local fi,fv=next(flingtable)
 					if fi then
-						if replicatesignal and not pdloadedtime then
+						if permadeath and replicatesignal and not pdloadedtime then
 							replicatesignal(cdsb)
 							pdloadedtime=osclock()+rst
 						end
@@ -865,6 +865,17 @@ local reanimate=function()
 							insSet(h,"Health",0)
 						else
 							insGet(newc,"BreakJoints")(newc)
+						end
+					elseif breakjointsmethod==3
+						if replicatesignal then
+							replicatesignal(FindFirstChildOfClass(newc,"Humanoid").ServerBreakJoints)
+						else
+							sg:SetCore("SendNotification",{Title="ServerBreakJoints",Text="Your executor does not support ReplicateSignal! Please see #supported-clients channel."})
+							insGet(newc,"BreakJoints")(newc)
+							local h=FindFirstChildOfClass(newc,"Humanoid")
+							if h then
+								insSet(h,"Health",0)
+							end
 						end
 					else
 						insGet(newc,"BreakJoints")(newc)
@@ -1211,7 +1222,7 @@ local reanimate=function()
 			if (not targetpart) or (flingtable[targetpart]~=nil) then
 				return false
 			end
-			if replicatesignal then
+			if permadeath and replicatesignal then
 				replicatesignal(cdsb)
 			end
 			if highlightflingtargets then
