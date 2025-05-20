@@ -866,7 +866,7 @@ local reanimate=function()
 						else
 							insGet(newc,"BreakJoints")(newc)
 						end
-					elseif breakjointsmethod==3
+					elseif breakjointsmethod==3 then
 						if replicatesignal then
 							replicatesignal(FindFirstChildOfClass(newc,"Humanoid").ServerBreakJoints)
 						else
