@@ -9,6 +9,15 @@ by rqz
 https://discord.com/invite/aEZpBEHgMT
 ]]--
 
+--===================================--
+--          Script Options           --
+--===================================--
+
+lightmode=false --overwrite black mode colors with white
+effects=true --toggle effects (if you experience performance issues try setting to false)
+timemultiplier=1 --change animation speed (min=0.1,default=1,max=10)
+walkspeedmultiplier=1 --change walkspeed (default=1,min/mix=-∞-->+∞)
+
 --====================================--
 --          FDless Options           --
 --====================================--
@@ -33,15 +42,6 @@ breakjointsmethod=1 --breakjoints mode
 --2 -health or breakjoints
 --3 -breakjoints
 simrad=true --sets simulation radius
-
---===================================--
---          LC Options              --
---===================================--
-
-lightmode=false --overwrite black mode colors with white
-effects=true --toggle effects (if you experience performance issues try setting to false)
-timemultiplier=1 --change animation speed (min=0.1,default=1,max=10)
-walkspeedmultiplier=1 --change walkspeed (default=1,min/mix=-∞-->+∞)
 
 --==========================================================================================================================--
 
