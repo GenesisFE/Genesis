@@ -1215,7 +1215,7 @@ local reanimate=function()
 					target=insGet(target,"Parent")
 				end
 			end
-			if (not IsA(target,"Model")) or (target==c) then
+			if (not IsA(target,"Model")) or (target==c) or (target==ws) then
 				return false
 			end
 			local targetpart=gp(target,"HumanoidRootPart","BasePart") or gp(target,"Torso","BasePart") or gp(target,"UpperTorso","BasePart")
