@@ -37,6 +37,7 @@ local xpcall=xpcall
 local type=type
 local typeof=typeof
 local game=game
+local replicatesignal=replicatesignal
 
 local i=Instance.new 
 local v2=Vector2.new 
@@ -89,7 +90,9 @@ local cfGet=getMetamethodFromErrorStack(cf_0,function(a,b) return a[b] end,funct
 local cfMul=getMetamethodFromErrorStack(cf_0,function(a,b) return a*b end,function(f) return angles(1,2,3)*angles(1,2,3)==f(angles(1,2,3),angles(1,2,3)) end)
 local cfAdd=getMetamethodFromErrorStack(cf_0,function(a,b) return a+b end,function(f) return cf(1,2,3)+v3(1,2,3)==f(cf(1,2,3),v3(1,2,3)) end)
 local v3Get=getMetamethodFromErrorStack(v3_0,function(a,b) return a[b] end,function(f) return v3(1,2,3).Unit==f(v3(1,2,3),"Unit") end)
+local v2Get=getMetamethodFromErrorStack(v2(),function(a,b) return a[b] end,function(f) return f(v2(1,2),"Y")==2 end)
 --multiplying and adding vector3 is faster if you use the * and + operators
+--its faster to multiply X and Y of vector2 than to multiply vector2 and then get X and Y from it
 
 --no need to index instances every time to call their functions
 local Clone=insGet(game,"Clone")
@@ -264,7 +267,6 @@ local makeplaceholder=function(v)
 end
 local emptyfunction=function() end
 
-local permadeath=permadeath~=false
 local fling=fling~=false
 local allowshiftlock=allowshiftlock~=false
 local ctrltp=ctrltp~=false
@@ -275,10 +277,14 @@ local discharscripts=discharscripts~=false and function(v) if IsA(v,"Script") th
 local flingchangestate=flingchangestate~=false
 local respawntp=(type(respawntp)=="number" and respawntp) or 3
 local breakjointsmethod=(type(breakjointsmethod)=="number" and breakjointsmethod) or 1
+if (breakjointsmethod==4) and (not replicatesignal) then
+	sg:SetCore("SendNotification",{Title="SERVERBREAKJOINTS",Text="Your executor does not support ReplicateSignal! Please see #supported-clients channel."})
+	breakjointsmethod=1
+end
 local simrad=simrad~=false
 local hidedeatheffect=hidedeatheffect~=false
 
-local replicatesignal=replicatesignal
+local permadeath=permadeath~=false
 
 local c=nil
 local stopreanimate=function() 
@@ -319,7 +325,7 @@ if permadeath then
             end
         end)
     else
-        sg:SetCore("SendNotification",{Title="FDLESS PERMADEATH",Text="Your executor does not support ReplicateSignal! Please see #supported-clients channel."})
+        sg:SetCore("SendNotification",{Title="PERMADEATH",Text="Your executor does not support ReplicateSignal! Please see #supported-clients channel."})
     end
 else
     --replicatesignal=nil
@@ -417,6 +423,7 @@ local reanimate=function()
 	local v3_0150=v3_010*1.5
 	local camcfLV=cfGet(camcf,"LookVector")
 	local camrot=cfl(v3_0,camcfLV)
+	local camrotX,camrotY=camrot:ToEulerAnglesYXZ()
 	local camcfRV=cfGet(camrot,"RightVector")
 	local cammag=-v3Get((cfGet(camcf,"Position")-(pos+v3_0150)),"Magnitude")
 
@@ -792,9 +799,11 @@ local reanimate=function()
 						insSet(hrp,"AssemblyLinearVelocity",v3_0)
 						insSet(hrp,"AssemblyAngularVelocity",v3_0)
 						insSet(hrp,"CFrame",cfr)
-						twait(0.17)
+						twait(0.25)
 					end
-					if respawntp==1 then
+					if respawntp==0 then
+						twait()
+					elseif respawntp==1 then
 						local startpos=pos+v3(mrandom(-32,32),0,mrandom(-32,32))
 						local dir=nil
 						local poscheck=true
@@ -819,14 +828,14 @@ local reanimate=function()
 						insSet(hrp,"CFrame",startpos)
 						insSet(hrp,"AssemblyLinearVelocity",v3_0)
 						insSet(hrp,"AssemblyAngularVelocity",v3_0)
-						twait(0.17)
+						twait(0.25)
 					elseif respawntp==2 then
 						insSet(hrp,"CFrame",cfAdd(cfr,cfGet(cfr,"RightVector")*3.5-cfGet(cfr,"LookVector")*3.5))
 						insSet(hrp,"AssemblyLinearVelocity",v3_0)
 						insSet(hrp,"AssemblyAngularVelocity",v3_0)
-						twait(0.17)
+						twait(0.25)
 					elseif respawntp==3 then
-						local t=osclock()+0.17
+						local t=osclock()+0.25
 						if pdloadedtime and pdloadedtime>t then
 							t=pdloadedtime
 						end
@@ -853,7 +862,14 @@ local reanimate=function()
 						end
 						pdloadedtime=nil
 					end
-					if breakjointsmethod==1 then
+					if breakjointsmethod==4 then
+						local h=FindFirstChildOfClass(newc,"Humanoid")
+						if h then
+							replicatesignal(insGet(h,"ServerBreakJoints"))
+						else
+							insGet(newc,"BreakJoints")(newc)
+						end
+					elseif breakjointsmethod==1 then
 						insGet(newc,"BreakJoints")(newc)
 						local h=FindFirstChildOfClass(newc,"Humanoid")
 						if h then
@@ -865,17 +881,6 @@ local reanimate=function()
 							insSet(h,"Health",0)
 						else
 							insGet(newc,"BreakJoints")(newc)
-						end
-					elseif breakjointsmethod==3 then
-						if replicatesignal then
-							replicatesignal(FindFirstChildOfClass(newc,"Humanoid").ServerBreakJoints)
-						else
-							sg:SetCore("SendNotification",{Title="FDLESS SERVERBREAKJOINTS",Text="Your executor does not support ReplicateSignal! Please see #supported-clients channel."})
-							insGet(newc,"BreakJoints")(newc)
-							local h=FindFirstChildOfClass(newc,"Humanoid")
-							if h then
-								insSet(h,"Health",0)
-							end
 						end
 					else
 						insGet(newc,"BreakJoints")(newc)
