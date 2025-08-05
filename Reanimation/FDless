@@ -1,15 +1,12 @@
 --[[
-FDless Reanimate from Patchma Hub V46
-
-	███    ███ ██    ██ ██     ██  ██████  ██████  ██      ██████  
+	FDless Reanimate from Patchma Hub V48
+	███    ███ ██    ██ ██     ██  ██████  ██████  ██      ██████  TM
 	████  ████  ██  ██  ██     ██ ██    ██ ██   ██ ██      ██   ██ 
 	██ ████ ██   ████   ██  █  ██ ██    ██ ██████  ██      ██   ██ 
 	██  ██  ██    ██    ██ ███ ██ ██    ██ ██   ██ ██      ██   ██ 
 	██      ██    ██     ███ ███   ██████  ██   ██ ███████ ██████  
-
---note to self: Do NOT call FDless MyWorld Reanimate 💀💀💀
-
-Patchma Hub Discord: https://discord.com/invite/QMy5f6DrbH
+	note to self: Do !!NOT!! call FDless MyWorld Reanimate
+	Patchma Hub Discord: https://discord.com/invite/QMy5f6DrbH
 ]]
 
 --no need to get and index the library tables with function names every time the script uses them
@@ -277,7 +274,7 @@ local discharscripts=discharscripts~=false and function(v) if IsA(v,"Script") th
 local flingchangestate=flingchangestate~=false
 local respawntp=(type(respawntp)=="number" and respawntp) or 3
 local breakjointsmethod=(type(breakjointsmethod)=="number" and breakjointsmethod) or 1
-if (breakjointsmethod==4) and (not replicatesignal) then
+if (breakjointsmethod==4) and not replicatesignal then
 	sg:SetCore("SendNotification",{Title="SERVERBREAKJOINTS",Text="Your executor does not support ReplicateSignal! Please see #supported-clients channel."})
 	breakjointsmethod=1
 end
@@ -290,7 +287,7 @@ local c=nil
 local stopreanimate=function() 
 	if c then
 		c=nil
-		if permadeath and replicatesignal then
+		if permadeath then
 			replicatesignal(cdsb)
 		end
 		return true
@@ -326,9 +323,9 @@ if permadeath then
         end)
     else
         sg:SetCore("SendNotification",{Title="PERMADEATH",Text="Your executor does not support ReplicateSignal! Please see #supported-clients channel."})
+	permadeath=false
     end
 else
-    --replicatesignal=nil
     pdloadedtime=nil
 end
 local reanimate=function()
@@ -745,7 +742,7 @@ local reanimate=function()
 					c=newc
 					local fi,fv=next(flingtable)
 					if fi then
-						if permadeath and replicatesignal and not pdloadedtime then
+						if permadeath and not pdloadedtime then
 							replicatesignal(cdsb)
 							pdloadedtime=osclock()+rst
 						end
@@ -929,7 +926,10 @@ local reanimate=function()
 	end
 
 	local mradN05=-0.008726646259971648
+	local pi2=math.pi/2-0.0001
+	local npi2=-pi2
 	local KeyCode=e.KeyCode
+	local enumYXZ=e.RotationOrder.YXZ
 	local enumMB2=e.UserInputType.MouseButton2
 	local enumMLCP=e.MouseBehavior.LockCurrentPosition
 	local enumMLC=(insGet(uis,"TouchEnabled") and enumMLCP) or e.MouseBehavior.LockCenter 
@@ -1021,8 +1021,9 @@ local reanimate=function()
 		elseif a==keyShift then
 			shiftlock=allowshiftlock and not shiftlock
 		elseif modes[a] then
-			if modes[mode].modeLeft then
-				modes[mode].modeLeft()
+			local modeLeft=modes[mode].modeLeft
+			if modeLeft then
+				modeLeft()
 			end
 			if mode==a then
 				mode="default"
@@ -1128,9 +1129,11 @@ local reanimate=function()
 					firstperson=true
 				end
 			elseif inputObject==cameraRotateInputObject then
-				local rotation=GetMouseDelta(uis)*mradN05
-				camcfLV=cfGet(cfMul(camrot,angles(rotation.Y,rotation.X,0)),"LookVector")
-				camrot=cfl(v3_0,camcfLV)
+				local rotation=GetMouseDelta(uis)
+				camrotX=clamp(v2Get(rotation,"Y")*mradN05+camrotX,npi2,pi2)
+				camrotY=v2Get(rotation,"X")*mradN05+camrotY
+				camrot=angles(camrotX,camrotY,0,enumYXZ)
+				camcfLV=cfGet(camrot,"LookVector")
 				camcfRV=cfGet(camrot,"RightVector")
 			end
 		end
@@ -1184,9 +1187,11 @@ local reanimate=function()
 		if b then return end
 		local inputType=insGet(a,"UserInputType")
 		if mouseCameraMove and inputType==enumMM then
-			local rotation=GetMouseDelta(uis)*mradN05
-			camcfLV=cfGet(cfMul(camrot,angles(rotation.Y,rotation.X,0)),"LookVector")
-			camrot=cfl(v3_0,camcfLV)
+			local rotation=GetMouseDelta(uis)
+			camrotX=clamp(v2Get(rotation,"Y")*mradN05+camrotX,npi2,pi2)
+			camrotY=v2Get(rotation,"X")*mradN05+camrotY
+			camrot=angles(camrotX,camrotY,0,enumYXZ)
+			camcfLV=cfGet(camrot,"LookVector")
 			camcfRV=cfGet(camrot,"RightVector")
 		elseif inputType==enumMW then
 			cammag=cammag+v3Get(insGet(a,"Position"),"Z")*(0.75-cammag/4)
@@ -1227,7 +1232,7 @@ local reanimate=function()
 			if (not targetpart) or (flingtable[targetpart]~=nil) then
 				return false
 			end
-			if permadeath and replicatesignal then
+			if permadeath then
 				replicatesignal(cdsb)
 			end
 			if highlightflingtargets then
