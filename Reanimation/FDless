@@ -319,7 +319,7 @@ if permadeath then
             end
         end)
     else
-        sg:SetCore("SendNotification",{Title="Permadeath",Text="Your executor does not support ReplicateSignal! Please see #supported-clients channel."})
+        sg:SetCore("SendNotification",{Title="FDLESS PERMADEATH",Text="Your executor does not support ReplicateSignal! Please see #supported-clients channel."})
     end
 else
     --replicatesignal=nil
@@ -870,7 +870,7 @@ local reanimate=function()
 						if replicatesignal then
 							replicatesignal(FindFirstChildOfClass(newc,"Humanoid").ServerBreakJoints)
 						else
-							sg:SetCore("SendNotification",{Title="ServerBreakJoints",Text="Your executor does not support ReplicateSignal! Please see #supported-clients channel."})
+							sg:SetCore("SendNotification",{Title="FDLESS SERVERBREAKJOINTS",Text="Your executor does not support ReplicateSignal! Please see #supported-clients channel."})
 							insGet(newc,"BreakJoints")(newc)
 							local h=FindFirstChildOfClass(newc,"Humanoid")
 							if h then
