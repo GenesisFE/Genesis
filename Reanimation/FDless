@@ -1,5 +1,5 @@
 --[[
-	FDless Reanimate from Patchma Hub V48
+	FDless Reanimate from Patchma Hub V48.GENESIS
 	███    ███ ██    ██ ██     ██  ██████  ██████  ██      ██████  TM
 	████  ████  ██  ██  ██     ██ ██    ██ ██   ██ ██      ██   ██ 
 	██ ████ ██   ████   ██  █  ██ ██    ██ ██████  ██      ██   ██ 
@@ -8,6 +8,12 @@
 	note to self: Do !!NOT!! call FDless MyWorld Reanimate
 	Patchma Hub Discord: https://discord.com/invite/QMy5f6DrbH
 ]]
+
+--return the loaded library if it was loaded already
+local ret=_G.GenesisFDless
+if ret then
+	return ret
+end
 
 --no need to get and index the library tables with function names every time the script uses them
 local osclock=os.clock
@@ -112,6 +118,7 @@ local gs=FindFirstChildOfClass(game,"GuiService")
 local sg=FindFirstChildOfClass(game,"StarterGui")
 local lp=insGet(plrs,"LocalPlayer")
 local pg=FindFirstChildOfClass(lp,"PlayerGui")
+local cg=FindFirstChildOfClass(game,"CoreGui")
 local mouse=insGet(lp,"GetMouse")(lp)
 local cdsb=insGet(lp,"ConnectDiedSignalBackend")
 local rst=insGet(plrs,"RespawnTime")+0.07 --1/15
@@ -222,6 +229,13 @@ local accessorylimbs={
 	{meshid="4324138105",textureid="4391374782",C0=angles(0,0,rad(90)),Name="Right Arm"},
 }
 
+local guiparent=nil
+if pcall(FindFirstChildOfClass,cg,"ScreenGui") then
+	guiparent=cg
+else
+	guiparent=pg
+end
+
 local gp=function(p,n,cl)
 	for i,v in next,GetChildren(p) do
 		if IsA(v,cl) and (insGet(v,"Name")==n) then
@@ -295,38 +309,38 @@ local stopreanimate=function()
 	return false
 end
 if permadeath then
-    if replicatesignal then
-        replicatesignal(cdsb)
-        pdloadedtime=osclock()+rst
-        local lastc=nil
-        local hdied=function()
-            if not c then
-                replicatesignal(cdsb)
-                pdloadedtime=osclock()+rst
-            end
-        end
-        Connect(GetPropertyChangedSignal(lp,"Character"),function()
-            local c=lp.Character
-            if c and c~=lastc then
-                lastc=c
-                replicatesignal(cdsb)
-                pdloadedtime=osclock()+rst
-                while lastc==c do
-                    local h=FindFirstChildOfClass(c,"Humanoid")
-                    if h then
-                        Connect(insGet(h,"Died"),hdied)
-                        break
-                    end
-                    Wait(preanimation)
-                end
-            end
-        end)
-    else
-        sg:SetCore("SendNotification",{Title="PERMADEATH",Text="Your executor does not support ReplicateSignal! Please see #supported-clients channel."})
-	permadeath=false
-    end
+	if replicatesignal then
+		replicatesignal(cdsb)
+		pdloadedtime=osclock()+rst
+		local lastc=nil
+		local hdied=function()
+			if not c then
+				replicatesignal(cdsb)
+				pdloadedtime=osclock()+rst
+			end
+		end
+		Connect(GetPropertyChangedSignal(lp,"Character"),function()
+			local c=lp.Character
+			if c and c~=lastc then
+				lastc=c
+				replicatesignal(cdsb)
+				pdloadedtime=osclock()+rst
+				while lastc==c do
+					local h=FindFirstChildOfClass(c,"Humanoid")
+					if h then
+						Connect(insGet(h,"Died"),hdied)
+						break
+					end
+					Wait(preanimation)
+				end
+			end
+		end)
+	else
+		sg:SetCore("SendNotification",{Title="PERMADEATH",Text="Your executor does not support ReplicateSignal! Please see #supported-clients channel."})
+		permadeath=false
+	end
 else
-    pdloadedtime=nil
+	pdloadedtime=nil
 end
 local reanimate=function()
 	--[[
@@ -1100,6 +1114,7 @@ local reanimate=function()
 			cameraZoomInputMagnitude=v3Get(insGet(cameraRotateInputObject,"Position")-insGet(cameraZoomInputObject,"Position"),"Magnitude")
 		end
 	end)
+	local cameraMoveable=true
 	Connect(insGet(uis,"TouchMoved"),function(inputObject)
 		local touchPos=insGet(inputObject,"Position")
 		local touchX=v3Get(touchPos,"X")
@@ -1128,7 +1143,7 @@ local reanimate=function()
 					cammag=0
 					firstperson=true
 				end
-			elseif inputObject==cameraRotateInputObject then
+			elseif (inputObject==cameraRotateInputObject) and cameraMoveable then
 				local rotation=GetMouseDelta(uis)
 				camrotX=clamp(v2Get(rotation,"Y")*mradN05+camrotX,npi2,pi2)
 				camrotY=v2Get(rotation,"X")*mradN05+camrotY
@@ -1186,7 +1201,7 @@ local reanimate=function()
 	Connect(insGet(uis,"InputChanged"),function(a,b)
 		if b then return end
 		local inputType=insGet(a,"UserInputType")
-		if mouseCameraMove and inputType==enumMM then
+		if mouseCameraMove and (inputType==enumMM) and cameraMoveable then
 			local rotation=GetMouseDelta(uis)
 			camrotX=clamp(v2Get(rotation,"Y")*mradN05+camrotX,npi2,pi2)
 			camrotY=v2Get(rotation,"X")*mradN05+camrotY
@@ -1243,9 +1258,7 @@ local reanimate=function()
 				insSet(h,"OutlineColor",c3(1,0,0))
 				insSet(h,"FillTransparency",0.5)
 				insSet(h,"OutlineTransparency",0)
-				if not pcall(insSet,h,"Parent",FindFirstChildOfClass(game,"CoreGui")) then
-					insSet(h,"Parent",pg)
-				end
+				insSet(h,"Parent",guiparent)
 				flingtable[targetpart]=h
 			else
 				flingtable[targetpart]=false
@@ -1858,6 +1871,9 @@ local reanimate=function()
 	local isFirstPerson=function() --returns true if user is in first person camera mode
 		return firstperson
 	end
+	local setCameraMoveable=function(b) --prevents the player from moving his camera
+		cameraMoveable=b
+	end
 
 	return {
 		cframes=cframes,
@@ -1885,9 +1901,14 @@ local reanimate=function()
 		getCamCF=getCamCF,
 		isFirstPerson=isFirstPerson,
 		setHipHeight=setHipHeight,
-        characters=characters,
-		refreshrayfilter=refreshrayfilter
+		characters=characters,
+		refreshrayfilter=refreshrayfilter,
+		setCameraMoveable=setCameraMoveable
 	}
 end
 
-return {reanimate = reanimate, stopreanimate = stopreanimate, gp = gp, rs = rs, insSet = insSet, insGet = insGet, cfMul = cfMul, mouse = mouse, isReanimated=function() return c end}
+ret={reanimate=reanimate,stopreanimate=stopreanimate,gp=gp,rs=rs,insSet=insSet,insGet=insGet,cfMul=cfMul,mouse=mouse,isReanimated=function() return c end}
+
+_G.GenesisFDless=ret
+
+return ret
