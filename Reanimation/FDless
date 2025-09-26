@@ -9,12 +9,6 @@
 	Patchma Hub Discord: https://discord.com/invite/QMy5f6DrbH
 ]]
 
---return the loaded library if it was loaded already
-local ret=_G.GenesisFDless
-if ret then
-	return ret
-end
-
 --no need to get and index the library tables with function names every time the script uses them
 local osclock=os.clock
 local tspawn=task.spawn
@@ -1907,8 +1901,4 @@ local reanimate=function()
 	}
 end
 
-ret={reanimate=reanimate,stopreanimate=stopreanimate,gp=gp,rs=rs,insSet=insSet,insGet=insGet,cfMul=cfMul,mouse=mouse,isReanimated=function() return c end}
-
-_G.GenesisFDless=ret
-
-return ret
+return {reanimate=reanimate,stopreanimate=stopreanimate,gp=gp,rs=rs,insSet=insSet,insGet=insGet,cfMul=cfMul,mouse=mouse,isReanimated=function() return c end}
