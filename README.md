@@ -36,8 +36,6 @@ You can access my scripts via the ``loadstring`` folder above, it has all the cu
 - ``@rqz`` Owner, scripter, media producer
 - ``MyWorld`` Partnership with HAX UPDATES
 
----
-
 ## Socials
 
 - **Youtube:** https://www.youtube.com/channel/UC1-1EmuWIW9svGZBe70J8bA/ (GENESIS-FE)
