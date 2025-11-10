@@ -1,5 +1,5 @@
 --[[
-	FDless Reanimate from Patchma Hub V48.GENESIS
+	FDless Reanimate from Patchma Hub V49.GENESIS
 	███    ███ ██    ██ ██     ██  ██████  ██████  ██      ██████  TM
 	████  ████  ██  ██  ██     ██ ██    ██ ██   ██ ██      ██   ██ 
 	██ ████ ██   ████   ██  █  ██ ██    ██ ██████  ██      ██   ██ 
@@ -25,6 +25,8 @@ local tinsert=table.insert
 local tclear=table.clear
 local tclone=table.clone
 local tfind=table.find
+local vmagnitude=vector.magnitude --faster than indexing with Magnitude
+local vnormalize=vector.normalize --faster than indexing with Unit
 
 --the script doesnt have to read global varaibles every time to get them
 --why not have them saved in local varaibles for faster access times
@@ -119,9 +121,9 @@ local rst=insGet(plrs,"RespawnTime")+0.07 --1/15
 local preanimation=insGet(rus,"PreAnimation")
 local heartbeat=insGet(rus,"Heartbeat")
 
-local GetPlayers=insGet(plrs,"GetPlayers")
 local SetCoreGuiEnabled=insGet(sg,"SetCoreGuiEnabled")
 local GetCoreGuiEnabled=insGet(sg,"GetCoreGuiEnabled")
+local SetCore=sg.SetCore
 local Raycast=insGet(ws,"Raycast")
 local Connect=heartbeat.Connect
 local Disconnect=Connect(GetPropertyChangedSignal(game,"CreatorId"),type).Disconnect
@@ -271,7 +273,7 @@ local makeplaceholder=function(v)
 	return v
 end
 local emptyfunction=function() end
-
+local ConvertResources=loadstring(game:HttpGet("https://raw.githubusercontent.com/GenesisFE/Genesis/refs/heads/main/Assets/ConvertResources"))()
 local fling=fling~=false
 local allowshiftlock=allowshiftlock~=false
 local ctrltp=ctrltp~=false
@@ -283,7 +285,7 @@ local flingchangestate=flingchangestate~=false
 local respawntp=(type(respawntp)=="number" and respawntp) or 3
 local breakjointsmethod=(type(breakjointsmethod)=="number" and breakjointsmethod) or 1
 if (breakjointsmethod==4) and not replicatesignal then
-	sg:SetCore("SendNotification",{Title="SERVERBREAKJOINTS",Text="Your executor does not support ReplicateSignal! Please see #supported-clients channel."})
+	SetCore(sg,"SendNotification",{Title="FDLESS SERVERBREAKJOINTS",Text="Your executor does not support ReplicateSignal! Please see #supported-clients channel."})
 	breakjointsmethod=1
 end
 local simrad=simrad~=false
@@ -330,7 +332,7 @@ if permadeath then
 			end
 		end)
 	else
-		sg:SetCore("SendNotification",{Title="PERMADEATH",Text="Your executor does not support ReplicateSignal! Please see #supported-clients channel."})
+		SetCore(sg,"SendNotification",{Title="FDLESS PERMADEATH",Text="Your executor does not support ReplicateSignal! Please see #supported-clients channel."})
 		permadeath=false
 	end
 else
@@ -430,7 +432,7 @@ local reanimate=function()
 	local camrot=cfl(v3_0,camcfLV)
 	local camrotX,camrotY=camrot:ToEulerAnglesYXZ()
 	local camcfRV=cfGet(camrot,"RightVector")
-	local cammag=-v3Get((cfGet(camcf,"Position")-(pos+v3_0150)),"Magnitude")
+	local cammag=-vmagnitude(cfGet(camcf,"Position")-(pos+v3_0150))
 
 	local R6parts={ 
 		head={Name="Head"},
@@ -785,7 +787,7 @@ local reanimate=function()
 								if insGet(i,"Anchored") or not IsDescendantOf(i,ws) then
 									break
 								end
-								if v3Get((startpos-insGet(i,"Position")),"Magnitude")>200 then
+								if vmagnitude(startpos-insGet(i,"Position"))>200 then
 									break
 								end
 								local tcf=cfAdd(insGet(i,"CFrame"),insGet(i,"AssemblyLinearVelocity")*(sin(sine*15)+1))
@@ -816,16 +818,16 @@ local reanimate=function()
 							poscheck=false
 							for i,v in next,rootparts do
 								local diff=(startpos-insGet(v,"Position"))*v3_101
-								if v3Get(diff,"Magnitude")<10 then
+								if vmagnitude(diff)<10 then
 									poscheck=true
-									dir=dir or (v3Get(diff,"Unit")*3)
+									dir=dir or (vnormalize(diff)*3)
 									startpos=startpos+dir
 								end
 							end
 							local diff=(startpos-pos)*v3_101
-							if v3Get(diff,"Magnitude")<10 then
+							if vmagnitude(diff)<10 then
 								poscheck=true
-								dir=dir or (v3Get(diff,"Unit")*3)
+								dir=dir or (vnormalize(diff)*3)
 								startpos=startpos+dir
 							end
 						end
@@ -914,7 +916,7 @@ local reanimate=function()
 		characters[v]=nil
 		rootparts[v]=nil
 	end)
-	for i,v in next,GetPlayers(plrs) do simradv=simradv+1000 if v~=lp then tspawn(onplayer,v) end end
+	for i,v in next,insGet(plrs,"GetPlayers")(plrs) do simradv=simradv+1000 if v~=lp then tspawn(onplayer,v) end end
 	Connect(insGet(plrs,"PlayerAdded"),onplayer)
 	onplayer(lp)
 	local setsimrad=emptyfunction
@@ -1105,7 +1107,7 @@ local reanimate=function()
 			cameraRotateInputObject=inputObject
 		else
 			cameraZoomInputObject=inputObject
-			cameraZoomInputMagnitude=v3Get(insGet(cameraRotateInputObject,"Position")-insGet(cameraZoomInputObject,"Position"),"Magnitude")
+			cameraZoomInputMagnitude=vmagnitude(insGet(cameraRotateInputObject,"Position")-insGet(cameraZoomInputObject,"Position"))
 		end
 	end)
 	local cameraMoveable=true
@@ -1115,10 +1117,10 @@ local reanimate=function()
 		local touchY=v3Get(touchPos,"Y")
 		if inputObject==thumbstickInputObject then
 			local direction=insGet(inputObject,"Position")-thumbstickTouchStart
-			local directionMag=v3Get(direction,"Magnitude")/thumbstickSizeMultiplier
+			local directionMag=vmagnitude(direction)/thumbstickSizeMultiplier
 			if directionMag>0.05 then
 				isWalking=true
-				direction=v3Get(direction,"Unit")*min(1,(directionMag-0.05)/0.95) 
+				direction=vnormalize(direction)*min(1,(directionMag-0.05)/0.95) 
 				FWmovement=-v3Get(direction,"Y")
 				RTmovement=v3Get(direction,"X")
 			else
@@ -1128,7 +1130,7 @@ local reanimate=function()
 			jumpingInput=touchY>jumpStartY and touchX>jumpStartX and touchX<jumpEndX and touchY<jumpEndY
 		else
 			if cameraZoomInputObject then
-				local newMagnitude=v3Get(insGet(cameraRotateInputObject,"Position")-insGet(cameraZoomInputObject,"Position"),"Magnitude")					
+				local newMagnitude=vmagnitude(insGet(cameraRotateInputObject,"Position")-insGet(cameraZoomInputObject,"Position"))				
 				cammag=cammag+(newMagnitude-cameraZoomInputMagnitude)*0.04*(0.75-cammag/4)
 				cameraZoomInputMagnitude=newMagnitude
 				if cammag<0 then
@@ -1414,7 +1416,7 @@ local reanimate=function()
 						noYvelTime=0
 					end
 				else
-					xzvel=v3Get(v3Get(camcfLV*v3_101,"Unit")*FWmovement+v3Get(camcfRV*v3_101,"Unit")*RTmovement,"Unit")*walkSpeed
+					xzvel=vnormalize(vnormalize(camcfLV*v3_101)*FWmovement+vnormalize(camcfRV*v3_101)*RTmovement)*walkSpeed
 					if onground then
 						pos=pos+xzvel*delta
 						cfr=cfl(pos,pos+camcfLV*v3_101)
@@ -1500,7 +1502,7 @@ local reanimate=function()
 						noYvelTime=0
 					end
 				else
-					xzvel=v3Get(v3Get(camcfLV*v3_101,"Unit")*FWmovement+v3Get(camcfRV*v3_101,"Unit")*RTmovement,"Unit")*walkSpeed
+					xzvel=vnormalize(vnormalize(camcfLV*v3_101)*FWmovement+vnormalize(camcfRV*v3_101)*RTmovement)*walkSpeed
 					if onground then
 						pos=pos+xzvel*delta
 						cfr=cfl(pos,pos+camcfLV*v3_101)
@@ -1586,7 +1588,7 @@ local reanimate=function()
 						noYvelTime=0
 					end
 				else
-					xzvel=v3Get(v3Get(camcfLV*v3_101,"Unit")*FWmovement+v3Get(camcfRV*v3_101,"Unit")*RTmovement,"Unit")*walkSpeed
+					xzvel=vnormalize(vnormalize(camcfLV*v3_101)*FWmovement+vnormalize(camcfRV*v3_101)*RTmovement)*walkSpeed
 					if onground then
 						pos=pos+xzvel*delta
 						cfr=cfAdd(Lerp(cfGet(cfr,"Rotation"),cfl(v3_0,xzvel),deltaTime),pos)
@@ -1665,7 +1667,7 @@ local reanimate=function()
 					end
 					local lastpos=i.l
 					local vel=(vpos-lastpos)/delta
-					local mag=v3Get(vel,"Magnitude")
+					local mag=vmagnitude(vel)
 					if mag<0.11730194091796875 then --0.0156402587890625*15/2
 						if placeholder and i.b then
 							insSet(placeholder,"Parent",nil)
@@ -1681,7 +1683,7 @@ local reanimate=function()
 								i.b=true
 							end
 						end
-						vel=v3Get(vel,"Unit")*speedlimit
+						vel=vnormalize(vel)*speedlimit
 						local newpos=lastpos+vel*delta
 						v=cfAdd(cfGet(v,"Rotation"),newpos)
 						i.l=newpos
@@ -1709,8 +1711,8 @@ local reanimate=function()
 							insSet(part,"AssemblyLinearVelocity",(claimpos-cfGet(v,"Position"))*v3_101/fallingTime+v3_net)
 						else
 							local vel1=vel*noYvelTime+xzvel
-							if v3Get(vel1,"Magnitude")>25.01 then
-								insSet(part,"AssemblyLinearVelocity",v3Get(vel1,"Unit")*v3_xzL+v3_net)
+							if vmagnitude(vel1)>25.01 then
+								insSet(part,"AssemblyLinearVelocity",vnormalize(vel1)*v3_xzL+v3_net)
 							else
 								insSet(part,"AssemblyLinearVelocity",vel1*v3_xz+v3_net)
 							end
@@ -1718,8 +1720,8 @@ local reanimate=function()
 					else
 						i.c=sine
 						local vel1=vel*noYvelTime+xzvel
-						if v3Get(vel1,"Magnitude")>25.01 then
-							insSet(part,"AssemblyLinearVelocity",v3Get(vel1,"Unit")*v3_xzL+v3_net)
+						if vmagnitude(vel1)>25.01 then
+							insSet(part,"AssemblyLinearVelocity",vnormalize(vel1)*v3_xzL+v3_net)
 						else
 							insSet(part,"AssemblyLinearVelocity",vel1*v3_xz+v3_net)
 						end
@@ -1901,4 +1903,4 @@ local reanimate=function()
 	}
 end
 
-return {reanimate=reanimate,stopreanimate=stopreanimate,gp=gp,rs=rs,insSet=insSet,insGet=insGet,cfMul=cfMul,mouse=mouse,isReanimated=function() return c end}
+return {reanimate=reanimate,stopreanimate=stopreanimate,gp=gp,rs=rs,insSet=insSet,insGet=insGet,cfMul=cfMul,mouse=mouse,isReanimated=function() return c end,ConvertResources=ConvertResources}
