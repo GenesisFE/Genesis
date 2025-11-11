@@ -34,7 +34,7 @@ You can access my scripts via the ``loadstring`` folder above, it has all the cu
 ## Credits
 
 - ``@rqz`` Owner, scripter, media producer
-- ``MyWorld`` Partnership with HAX UPDATES
+- ``MyWorld`` Partnership with HAX
 
 ## Socials
 
