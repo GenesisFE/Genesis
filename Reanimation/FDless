@@ -1,6 +1,6 @@
 --no need to load the whole thing cuz u can use the last one
 if _G.GenesisFDless then 
-	game:FindFirstChildOfClass("StarterGui"):SetCore("SendNotification",{Title="FDLESS",Text="To speed up script loads and prevent conflicts with running multiple scripts, the reanimate is reused, rejoin to change settings.",Duration=10})
+	game:FindFirstChildOfClass("StarterGui"):SetCore("SendNotification",{Title="FDLESS",Text="Using FDless loaded by previously executed scripts to prevent reanimate conflicts. Rejoin to update reanimate settings.",Duration=10})
 	return _G.GenesisFDless 
 end
 
