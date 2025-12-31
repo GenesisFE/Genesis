@@ -1,5 +1,16 @@
+--no need to load the whole thing cuz u can use the last one
+if _G.GenesisFDless then 
+	game:FindFirstChildOfClass("StarterGui"):SetCore("SendNotification",{Title="FDLESS",Text="To speed up script loads and prevent conflicts with running multiple scripts, the reanimate is reused, rejoin to change settings.",Duration=10})
+	return _G.GenesisFDless 
+end
+
+
+
+
+--oh you're still here? queue the reanimate
+
 --[[
-	FDless Reanimate from Patchma Hub V49.GENESIS
+	FDless Reanimate from Patchma Hub V50.GENESIS
 	███    ███ ██    ██ ██     ██  ██████  ██████  ██      ██████  TM
 	████  ████  ██  ██  ██     ██ ██    ██ ██   ██ ██      ██   ██ 
 	██ ████ ██   ████   ██  █  ██ ██    ██ ██████  ██      ██   ██ 
@@ -121,6 +132,7 @@ local rst=insGet(plrs,"RespawnTime")+0.07 --1/15
 local preanimation=insGet(rus,"PreAnimation")
 local heartbeat=insGet(rus,"Heartbeat")
 
+local GetPlayers=insGet(plrs,"GetPlayers")
 local SetCoreGuiEnabled=insGet(sg,"SetCoreGuiEnabled")
 local GetCoreGuiEnabled=insGet(sg,"GetCoreGuiEnabled")
 local SetCore=sg.SetCore
@@ -907,7 +919,8 @@ local reanimate=function()
 		charcons[v]=Connect(GetPropertyChangedSignal(v,"Character"),oncharacter)
 		oncharacter()
 	end
-	Connect(insGet(plrs,"PlayerRemoving"),function(v)
+	local cons={}
+	tinsert(cons,Connect(insGet(plrs,"PlayerRemoving"),function(v)
 		simradv=simradv-1000
 		local charcon=charcons[v]
 		if charcon then
@@ -915,9 +928,9 @@ local reanimate=function()
 		end
 		characters[v]=nil
 		rootparts[v]=nil
-	end)
-	for i,v in next,insGet(plrs,"GetPlayers")(plrs) do simradv=simradv+1000 if v~=lp then tspawn(onplayer,v) end end
-	Connect(insGet(plrs,"PlayerAdded"),onplayer)
+	end))
+	for i,v in next,GetPlayers(plrs) do simradv=simradv+1000 if v~=lp then tspawn(onplayer,v) end end
+	tinsert(cons,Connect(insGet(plrs,"PlayerAdded"),onplayer))
 	onplayer(lp)
 	local setsimrad=emptyfunction
 	if simrad then
@@ -949,11 +962,11 @@ local reanimate=function()
 
 	local mouseBehavior=nil
 	local lastMouseBehavior=insGet(uis,"MouseBehavior")
-	Connect(GetPropertyChangedSignal(uis,"MouseBehavior"),function()
-		if mouseBehavior and (insGet(uis,"MouseBehavior")~=mouseBehavior) then
+	tinsert(cons,Connect(GetPropertyChangedSignal(uis,"MouseBehavior"),function()
+		if insGet(uis,"MouseBehavior")~=mouseBehavior then
 			insSet(uis,"MouseBehavior",mouseBehavior)
 		end
-	end)
+	end))
 
 	local mode="default"
 	local defaultmode={}
@@ -1009,7 +1022,7 @@ local reanimate=function()
 	refreshKeyboardMovement()
 
 	local keyShift=KeyCode.LeftShift
-	Connect(insGet(uis,"InputBegan"),function(a)
+	tinsert(cons,Connect(insGet(uis,"InputBegan"),function(a)
 		if insGet(gs,"MenuIsOpen") or GetFocusedTextBox(uis) then
 			return
 		end
@@ -1049,8 +1062,8 @@ local reanimate=function()
 				modes[mode].modeEntered()
 			end
 		end
-	end)
-	Connect(insGet(uis,"InputEnded"),function(a)
+	end))
+	tinsert(cons,Connect(insGet(uis,"InputEnded"),function(a)
 		a=insGet(a,"KeyCode")
 		if a==keyW then
 			Wpressed=false
@@ -1067,7 +1080,7 @@ local reanimate=function()
 		elseif a==keySpace then
 			jumpingInput=false
 		end
-	end)
+	end))
 
 	local thumbstickEndX=0
 	local thumbstickStartY=0
@@ -1087,7 +1100,7 @@ local reanimate=function()
 	local thumbstickTouchStart=v3_0
 	local cameraZoomInputMagnitude=0
 
-	Connect(insGet(uis,"TouchStarted"),function(inputObject)
+	tinsert(cons,Connect(insGet(uis,"TouchStarted"),function(inputObject)
 		if insGet(gs,"MenuIsOpen") or GetFocusedTextBox(uis) then
 			return
 		end
@@ -1109,9 +1122,9 @@ local reanimate=function()
 			cameraZoomInputObject=inputObject
 			cameraZoomInputMagnitude=vmagnitude(insGet(cameraRotateInputObject,"Position")-insGet(cameraZoomInputObject,"Position"))
 		end
-	end)
+	end))
 	local cameraMoveable=true
-	Connect(insGet(uis,"TouchMoved"),function(inputObject)
+	tinsert(cons,Connect(insGet(uis,"TouchMoved"),function(inputObject)
 		local touchPos=insGet(inputObject,"Position")
 		local touchX=v3Get(touchPos,"X")
 		local touchY=v3Get(touchPos,"Y")
@@ -1130,7 +1143,7 @@ local reanimate=function()
 			jumpingInput=touchY>jumpStartY and touchX>jumpStartX and touchX<jumpEndX and touchY<jumpEndY
 		else
 			if cameraZoomInputObject then
-				local newMagnitude=vmagnitude(insGet(cameraRotateInputObject,"Position")-insGet(cameraZoomInputObject,"Position"))				
+				local newMagnitude=vmagnitude(insGet(cameraRotateInputObject,"Position")-insGet(cameraZoomInputObject,"Position"))
 				cammag=cammag+(newMagnitude-cameraZoomInputMagnitude)*0.04*(0.75-cammag/4)
 				cameraZoomInputMagnitude=newMagnitude
 				if cammag<0 then
@@ -1148,8 +1161,8 @@ local reanimate=function()
 				camcfRV=cfGet(camrot,"RightVector")
 			end
 		end
-	end)
-	Connect(insGet(uis,"TouchEnded"),function(inputObject)
+	end))
+	tinsert(cons,Connect(insGet(uis,"TouchEnded"),function(inputObject)
 		if inputObject==thumbstickInputObject then
 			thumbstickInputObject=nil
 			isWalking=false
@@ -1162,7 +1175,7 @@ local reanimate=function()
 		elseif inputObject==cameraZoomInputObject then
 			cameraZoomInputObject=nil
 		end
-	end)
+	end))
 
 	local refreshTouchRegions=function()
 		local sX=insGet(mouse,"ViewSizeX")
@@ -1188,13 +1201,13 @@ local reanimate=function()
 			jumpEndY=jumpStartY+120
 		end
 	end
-	Connect(GetPropertyChangedSignal(mouse,"ViewSizeX"),refreshTouchRegions)
-	Connect(GetPropertyChangedSignal(mouse,"ViewSizeY"),refreshTouchRegions)
-	Connect(GetPropertyChangedSignal(gs,"TopbarInset"),refreshTouchRegions)
+	tinsert(cons,Connect(GetPropertyChangedSignal(mouse,"ViewSizeX"),refreshTouchRegions))
+	tinsert(cons,Connect(GetPropertyChangedSignal(mouse,"ViewSizeY"),refreshTouchRegions))
+	tinsert(cons,Connect(GetPropertyChangedSignal(gs,"TopbarInset"),refreshTouchRegions))
 	refreshTouchRegions()
 
 	local mouseCameraMove=false
-	Connect(insGet(uis,"InputChanged"),function(a,b)
+	tinsert(cons,Connect(insGet(uis,"InputChanged"),function(a,b)
 		if b then return end
 		local inputType=insGet(a,"UserInputType")
 		if mouseCameraMove and (inputType==enumMM) and cameraMoveable then
@@ -1213,64 +1226,58 @@ local reanimate=function()
 				firstperson=true
 			end
 		end
-	end)
+	end))
 
-	local predictionfling=nil
-	if fling then
-		predictionfling=function(target)
-			if not c then
-				return false
-			end
-			if typeof(target)~="Instance" then 
-				target=insGet(mouse,"Target")
-				if not target then
-					return false
-				end
-			end
-			if not IsDescendantOf(target,ws) then
-				return false
-			end
-			if IsA(target,"BasePart") or IsA(target,"Humanoid") then 
-				target=insGet(target,"Parent") 
-				if IsA(target,"Accessory") then
-					target=insGet(target,"Parent")
-				end
-			end
-			if (not IsA(target,"Model")) or (target==c) or (target==ws) then
-				return false
-			end
-			local targetpart=gp(target,"HumanoidRootPart","BasePart") or gp(target,"Torso","BasePart") or gp(target,"UpperTorso","BasePart")
-			if (not targetpart) or (flingtable[targetpart]~=nil) then
-				return false
-			end
-			if permadeath then
-				replicatesignal(cdsb)
-			end
-			if highlightflingtargets then
-				local h=i("Highlight")
-				insSet(h,"Name",rs())
-				insSet(h,"Adornee",target)
-				insSet(h,"FillColor",c3(1,0,0))
-				insSet(h,"OutlineColor",c3(1,0,0))
-				insSet(h,"FillTransparency",0.5)
-				insSet(h,"OutlineTransparency",0)
-				insSet(h,"Parent",guiparent)
-				flingtable[targetpart]=h
-			else
-				flingtable[targetpart]=false
-			end
-			return true
+	local predictionfling=function(target)
+		if not c then
+			return false
 		end
-	else
-		predictionfling=emptyfunction
+		if typeof(target)~="Instance" then 
+			target=insGet(mouse,"Target")
+			if not target then
+				return false
+			end
+		end
+		if not IsDescendantOf(target,ws) then
+			return false
+		end
+		if IsA(target,"BasePart") or IsA(target,"Humanoid") then 
+			target=insGet(target,"Parent") 
+			if IsA(target,"Accessory") then
+				target=insGet(target,"Parent")
+			end
+		end
+		if (not IsA(target,"Model")) or (target==c) then
+			return false
+		end
+		local targetpart=gp(target,"HumanoidRootPart","BasePart") or gp(target,"Torso","BasePart") or gp(target,"UpperTorso","BasePart")
+		if (not targetpart) or (flingtable[targetpart]~=nil) then
+			return false
+		end
+		if permadeath then
+			replicatesignal(cdsb)
+		end
+		if highlightflingtargets then
+			local h=i("Highlight")
+			insSet(h,"Name",rs())
+			insSet(h,"Adornee",target)
+			insSet(h,"FillColor",c3(1,0,0))
+			insSet(h,"OutlineColor",c3(1,0,0))
+			insSet(h,"FillTransparency",0.5)
+			insSet(h,"OutlineTransparency",0)
+			insSet(h,"Parent",guiparent)
+			flingtable[targetpart]=h
+		else
+			flingtable[targetpart]=false
+		end
+		return true
 	end
 
-	local clickConnection=nil
 	if ctrlclicktp then
 		ctrlclicktp=KeyCode.LeftControl
 		local tpoff=v3_010*3
 		if clickfling then
-			clickConnection=Connect(insGet(mouse,"Button1Down"),function()
+			tinsert(cons,Connect(insGet(mouse,"Button1Down"),function()
 				if insGet(mouse,"Target") then
 					if IsKeyDown(uis,ctrlclicktp) then
 						pos=cfGet(insGet(mouse,"Hit"),"Position")+tpoff
@@ -1281,19 +1288,19 @@ local reanimate=function()
 						predictionfling()
 					end
 				end
-			end)
+			end))
 		else
-			clickConnection=Connect(insGet(mouse,"Button1Down"),function()
+			tinsert(cons,Connect(insGet(mouse,"Button1Down"),function()
 				if insGet(mouse,"Target") and IsKeyDown(uis,ctrlclicktp) then
 					pos=cfGet(insGet(mouse,"Hit"),"Position")+tpoff
 					cfr=cfl(pos,pos+camcfLV*v3_101)
 					xzvel=v3_0
 					Yvel=0
 				end
-			end)
+			end))
 		end
 	elseif clickfling then
-		clickConnection=Connect(insGet(mouse,"Button1Down"),predictionfling)
+		tinsert(cons,Connect(insGet(mouse,"Button1Down"),predictionfling))
 	end
 
 	local hhOff=3
@@ -1322,8 +1329,8 @@ local reanimate=function()
 			for i,v in next,charcons do
 				Disconnect(v)
 			end
-			if clickConnection then
-				Disconnect(clickConnection)
+			for i,v in next,cons do
+				Disconnect(v)
 			end
 			mouseBehavior=nil
 			insSet(uis,"MouseBehavior",enumMD)
@@ -1903,4 +1910,5 @@ local reanimate=function()
 	}
 end
 
-return {reanimate=reanimate,stopreanimate=stopreanimate,gp=gp,rs=rs,insSet=insSet,insGet=insGet,cfMul=cfMul,mouse=mouse,isReanimated=function() return c end,ConvertResources=ConvertResources}
+_G.GenesisFDless={reanimate=reanimate,stopreanimate=stopreanimate,gp=gp,rs=rs,insSet=insSet,insGet=insGet,cfMul=cfMul,mouse=mouse,isReanimated=function() return c end,ConvertResources=ConvertResources}
+return _G.GenesisFDless
