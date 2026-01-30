@@ -150,7 +150,6 @@ local Lerp=cfGet(cf_0,"Lerp")
 
 local rad=math.rad
 local accessorylimbs={
-
 	-- unknown head
 	{meshid="11601535857",textureid="",C0=angles(0,3.141592653589793,0),Name="Head"},
 
@@ -192,7 +191,7 @@ local accessorylimbs={
 	{meshid="105141400603933",textureid="",C0=angles(0,0,1.5707963267948966),Name="Right Arm"},
 	-- head for black rigs
 	{meshid="13953153289",textureid="",C0=cf_0,Name="Head"},
-	-- offsale black rig
+	-- lay offsale black rig
 	{meshid="17387586286",textureid="",C0=angles(1.5707963267948966,0,1.5707963267948966),Name="Left Leg"},
 	{meshid="17387586286",textureid="",C0=angles(-1.5707963267948966,0,1.5707963267948966),Name="Right Leg"},
 	{meshid="17374767929",textureid="",C0=angles(1.5707963267948966,0,1.5707963267948966),Name="Left Arm"},
@@ -213,7 +212,7 @@ local accessorylimbs={
 
 	-- head for noob rig
 	{meshid="13058309233",textureid="",C0=angles(0,3.141592653589793,0),Name="Head"},
-	-- offsale noob
+	-- lay offsale noob
 	{meshid="18640899369",textureid="",C0=cf_0,Name="Torso"},
 	{meshid="18640901641",textureid="",C0=cf_0,Name="Left Leg"},
 	{meshid="18640901641",textureid="",C0=cf_0,Name="Right Leg"},
@@ -228,6 +227,13 @@ local accessorylimbs={
 
 	-- white torso
 	{meshid="126825022897778",textureid="",C0=cf_0,Name="Torso"},
+	
+	-- lay onsale gray torso white arm black leg
+	{meshid="139792224823925",textureid="",C0=cf_0,Name="Torso"},
+	{meshid="83395427313429",textureid="",C0=angles(0,0,1.5707963267948966),Name="Left Leg"},
+	{meshid="83395427313429",textureid="",C0=angles(0,0,1.5707963267948966),Name="Right Leg"},
+	{meshid="105263225400272",textureid="",C0=angles(0,0,1.5707963267948966),Name="Left Arm"},
+	{meshid="105263225400272",textureid="",C0=angles(0,0,1.5707963267948966),Name="Right Arm"},
 
 	-- free rig
 	{meshid="4819720316",textureid="4819722776",C0=angles(0,0,rad(15)),Name="Torso"},
