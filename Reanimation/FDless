@@ -5,18 +5,18 @@ if _G.GenesisFDless then
 end
 
 
-
-
 --oh you're still here? queue the reanimate
 
 --[[
-	FDless Reanimate from Patchma Hub V50.GENESIS
+	FDless Reanimate by...
 	███    ███ ██    ██ ██     ██  ██████  ██████  ██      ██████  TM
 	████  ████  ██  ██  ██     ██ ██    ██ ██   ██ ██      ██   ██ 
 	██ ████ ██   ████   ██  █  ██ ██    ██ ██████  ██      ██   ██ 
 	██  ██  ██    ██    ██ ███ ██ ██    ██ ██   ██ ██      ██   ██ 
 	██      ██    ██     ███ ███   ██████  ██   ██ ███████ ██████  
-	note to self: Do !!NOT!! call FDless MyWorld Reanimate
+	
+	"i have decided this shall not die yet" - myworld and sheet
+	
 	Patchma Hub Discord: https://discord.com/invite/QMy5f6DrbH
 ]]
 
@@ -112,8 +112,8 @@ local IsA=insGet(game,"IsA")
 local FindFirstChildOfClass=insGet(game,"FindFirstChildOfClass")
 local FindFirstChildWhichIsA=insGet(game,"FindFirstChildWhichIsA")
 local GetChildren=insGet(game,"GetChildren")
-local GetDescendants=insGet(game,"GetDescendants")
 local IsDescendantOf=insGet(game,"IsDescendantOf")
+local QueryDescendants=insGet(game,"QueryDescendants")
 local GetPropertyChangedSignal=insGet(game,"GetPropertyChangedSignal")
 
 --findfirstchildofclass faster than getservice
@@ -148,7 +148,6 @@ local IsKeyDown=insGet(uis,"IsKeyDown")
 local Inverse=cfGet(cf_0,"Inverse")
 local Lerp=cfGet(cf_0,"Lerp")
 
-local rad=math.rad
 local accessorylimbs={
 	-- unknown head
 	{meshid="11601535857",textureid="",C0=angles(0,3.141592653589793,0),Name="Head"},
@@ -227,7 +226,7 @@ local accessorylimbs={
 
 	-- white torso
 	{meshid="126825022897778",textureid="",C0=cf_0,Name="Torso"},
-	
+
 	-- lay onsale gray torso white arm black leg
 	{meshid="139792224823925",textureid="",C0=cf_0,Name="Torso"},
 	{meshid="83395427313429",textureid="",C0=angles(0,0,1.5707963267948966),Name="Left Leg"},
@@ -236,11 +235,11 @@ local accessorylimbs={
 	{meshid="105263225400272",textureid="",C0=angles(0,0,1.5707963267948966),Name="Right Arm"},
 
 	-- free rig
-	{meshid="4819720316",textureid="4819722776",C0=angles(0,0,rad(15)),Name="Torso"},
-	{meshid="4094864753",textureid="4094881938",C0=angles(0,0,rad(-90)),Name="Left Leg"},
-	{meshid="4154474745",textureid="4154474807",C0=angles(0,0,rad(90)),Name="Right Leg"},
-	{meshid="4489232754",textureid="4489233876",C0=angles(0,0,rad(-90)),Name="Left Arm"},
-	{meshid="4324138105",textureid="4391374782",C0=angles(0,0,rad(90)),Name="Right Arm"},
+	{meshid="4819720316",textureid="4819722776",C0=angles(0,0,0.2617993877991494),Name="Torso"},
+	{meshid="4094864753",textureid="4094881938",C0=angles(0,0,-1.5707963267948966),Name="Left Leg"},
+	{meshid="4154474745",textureid="4154474807",C0=angles(0,0,1.5707963267948966),Name="Right Leg"},
+	{meshid="4489232754",textureid="4489233876",C0=angles(0,0,-1.5707963267948966),Name="Left Arm"},
+	{meshid="4324138105",textureid="4391374782",C0=angles(0,0,1.5707963267948966),Name="Right Arm"},
 }
 
 local guiparent=nil
@@ -250,54 +249,61 @@ else
 	guiparent=pg
 end
 
-local gp=function(p,n,cl)
-	for i,v in next,GetChildren(p) do
-		if IsA(v,cl) and (insGet(v,"Name")==n) then
-			return v
-		end
-	end
-	return nil
-end
-local timegp=function(p,n,c,t)
+--querydescendants faster than getchildren and checks in lua
+local timeQueryDescendants=function(p,s,t)
 	t=osclock()+t
-	while t>osclock() do
-		for i,v in next,GetChildren(p) do
-			if IsA(v,c) and (insGet(v,"Name")==n) then
-				return v
+	local refresh=true
+	local con=Connect(insGet(p,"DescendantAdded"),function()
+		refresh=true
+	end)
+	local res=nil
+	repeat
+		if refresh then
+			res=QueryDescendants(p,s)
+			if next(res) then
+				--not using break to have one less jump opcode
+				Disconnect(con)
+				return res
 			end
+			refresh=false
 		end
 		Wait(preanimation)
-	end
-	return nil
+	until (osclock()>t)
+	Disconnect(con)
+	return res
 end
 local makeplaceholder=function(v)
 	if not insGet(v,"Archivable") then
 		insSet(v,"Archivable",true)
 	end
 	v=Clone(v)
-	for i,v in next,GetChildren(v) do
-		if IsA(v,"SpecialMesh") then
-			insSet(v,"Name",rs())
-			ClearAllChildren(v)
-		else
-			Destroy(v)
-		end
+	local mesh=FindFirstChildOfClass(v,"SpecialMesh")
+	if mesh then
+		insSet(mesh,"Parent",nil)
+		ClearAllChildren(v)
+		ClearAllChildren(mesh)
+		insSet(mesh,"Name",rs())
+		insSet(mesh,"Parent",v)
+	else
+		ClearAllChildren(v)
 	end
 	insSet(v,"Name",rs())
 	insSet(v,"Anchored",true)
 	insSet(v,"CanCollide",false)
-	insSet(v,"CanQuery",false)
 	insSet(v,"Transparency",0.25)
 	return v
 end
+
 local emptyfunction=function() end
-local ConvertResources=loadstring(game:HttpGet("https://raw.githubusercontent.com/GenesisFE/Genesis/refs/heads/main/Assets/ConvertResources"))()
 local fling=fling~=false
 local allowshiftlock=allowshiftlock~=false
 local ctrltp=ctrltp~=false
+local invisiblekeybind=false --invisiblekeybind~=false
+local invisibleoffset=(type(invisibleoffset)=="number" and v3_010*-invisibleoffset) or v3_010*-100
 local placeholders=placeholders~=false
 local clickfling=clickfling==true
 local highlightflingtargets=highlightflingtargets~=false
+local rainbowflinghighlights=rainbowflinghighlights~=false
 local discharscripts=discharscripts~=false and function(v) if IsA(v,"Script") then insSet(v,"Disabled",true) end end
 local flingchangestate=flingchangestate~=false
 local respawntp=(type(respawntp)=="number" and respawntp) or 3
@@ -310,6 +316,8 @@ local simrad=simrad~=false
 local hidedeatheffect=hidedeatheffect~=false
 
 local permadeath=permadeath~=false
+local refit=refit~=false 
+local onrefit=onrefit
 
 local c=nil
 local stopreanimate=function() 
@@ -343,7 +351,7 @@ if permadeath then
 					local h=FindFirstChildOfClass(c,"Humanoid")
 					if h then
 						Connect(insGet(h,"Died"),hdied)
-						break
+						return
 					end
 					Wait(preanimation)
 				end
@@ -352,6 +360,7 @@ if permadeath then
 	else
 		SetCore(sg,"SendNotification",{Title="FDLESS PERMADEATH",Text="Your executor does not support ReplicateSignal! Please see #supported-clients channel."})
 		permadeath=false
+		refit=false
 	end
 else
 	pdloadedtime=nil
@@ -369,6 +378,7 @@ local reanimate=function()
 	local jumpPower = 50 --your jump power (can be changed at runtime)
 	local gravity = 196.2 --how fast the characters velocity decreases while falling (can be changed at runtime)
 	local ctrlclicktp = ctrltp --makes you teleport where u point ur mouse cursor at when click and hold ctrl down
+	local invisible = false --moves your parts underground so you are not visible by pressing "i"
 	local clickfling = clickfling --makes you fling the person you clicked when its available to do so
 	local flingvel = v3(15000,16000,15000) --the rotation velocity that ur character will have while flinging
 
@@ -376,7 +386,8 @@ local reanimate=function()
 	c=insGet(lp,"Character")
 	if not (c and IsDescendantOf(c,ws)) then return end
 
-	local rootpart=gp(c,"HumanoidRootPart","BasePart") or gp(c,"Torso","BasePart") or gp(c,"UpperTorso","BasePart") or timegp(c,"HumanoidRootPart","BasePart",0.5) or FindFirstChildWhichIsA(c,"BasePart")
+
+	local rootpart=QueryDescendants(c,">BasePart#HumanoidRootPart")[1] or QueryDescendants(c,">BasePart#Torso")[1] or QueryDescendants(c,">BasePart#UpperTorso")[1] or timeQueryDescendants(c,">BasePart#HumanoidRootPart",10)[1] or FindFirstChildWhichIsA(c,"BasePart")
 	if not rootpart then return end
 
 	local cam=nil
@@ -508,18 +519,18 @@ local reanimate=function()
 	local refreshedjoints={}
 	local refreshjointsI=nil
 	refreshjointsI=function(part)
-		tinsert(refreshedjoints,part)
+		refreshedjoints[part]=true
 		for i,v in next,joints do
 			local part0=v.Part0
 			local part1=v.Part1
 			if part1 and (part0==part) then
 				cframes[part1]=cfMul(cframes[part],cfMul(v.C0,Inverse(v.C1)))
-				if not tfind(refreshedjoints,part1) then
+				if not refreshedjoints[part1] then
 					refreshjointsI(part1)
 				end
 			elseif part0 and (part1==part) then
 				cframes[part0]=cfMul(cframes[part],cfMul(v.C1,Inverse(v.C0)))
-				if not tfind(refreshedjoints,part0) then
+				if not refreshedjoints[part0] then
 					refreshjointsI(part0)
 				end
 			end
@@ -660,11 +671,14 @@ local reanimate=function()
 				if t.p==p then
 					t.p=nil
 				end
+				if refit and c then
+					onrefit()
+					replicatesignal(cdsb)
+				end
 			end
 		end)
 	end
-	local ondes=nil
-	ondes=function(v)
+	local ondes=function(v)
 		if c and IsA(v,"Attachment") and IsDescendantOf(c,ws) then
 			local v1=attachments[insGet(v,"Name")]
 			if v1 then
@@ -759,13 +773,11 @@ local reanimate=function()
 				if islp then
 					if discharscripts then
 						Connect(insGet(newc,"DescendantAdded"),discharscripts)
-						for i,v in next,GetDescendants(newc) do
-							if IsA(v,"Script") then
-								insSet(v,"Disabled",true)
-							end
+						for i,v in next,QueryDescendants(newc,"Script") do
+							insSet(v,"Disabled",true)
 						end
 					end
-					local hrp=timegp(newc,"HumanoidRootPart","BasePart",10)
+					local hrp=timeQueryDescendants(newc,">BasePart#HumanoidRootPart",10)[1]
 					if not (hrp and c and IsDescendantOf(newc,ws)) then return end
 					c=newc
 					local fi,fv=next(flingtable)
@@ -911,11 +923,11 @@ local reanimate=function()
 						insGet(newc,"BreakJoints")(newc)
 					end
 					Connect(insGet(newc,"DescendantAdded"),ondes)
-					for i,v in next,GetDescendants(newc) do
+					for i,v in next,QueryDescendants(newc,"Attachment") do
 						ondes(v)
 					end
 				else
-					local hrp=timegp(newc,"HumanoidRootPart","BasePart",10)
+					local hrp=timeQueryDescendants(newc,">BasePart#HumanoidRootPart",10)[1]
 					if hrp and c and IsDescendantOf(newc,ws) then
 						rootparts[v]=hrp
 					end
@@ -941,10 +953,7 @@ local reanimate=function()
 	local setsimrad=emptyfunction
 	if simrad then
 		setsimrad=function()
-			local canset,_=pcall(function()
-				insSet(lp,"SimulationRadius",simradv)
-			end)
-			if canset then
+			if pcall(insSet,lp,"SimulationRadius",simradv) then
 				setsimrad=function()
 					insSet(lp,"SimulationRadius",simradv)
 				end
@@ -966,8 +975,7 @@ local reanimate=function()
 	local enumMW=e.UserInputType.MouseWheel
 	local enumMM=e.UserInputType.MouseMovement
 
-	local mouseBehavior=nil
-	local lastMouseBehavior=insGet(uis,"MouseBehavior")
+	local mouseBehavior=insGet(uis,"MouseBehavior")
 	tinsert(cons,Connect(GetPropertyChangedSignal(uis,"MouseBehavior"),function()
 		if insGet(uis,"MouseBehavior")~=mouseBehavior then
 			insSet(uis,"MouseBehavior",mouseBehavior)
@@ -1028,6 +1036,7 @@ local reanimate=function()
 	refreshKeyboardMovement()
 
 	local keyShift=KeyCode.LeftShift
+	local keyI=KeyCode.I
 	tinsert(cons,Connect(insGet(uis,"InputBegan"),function(a)
 		if insGet(gs,"MenuIsOpen") or GetFocusedTextBox(uis) then
 			return
@@ -1049,6 +1058,8 @@ local reanimate=function()
 			jumpingInput=true
 		elseif a==keyShift then
 			shiftlock=allowshiftlock and not shiftlock
+		elseif invisiblekeybind and a==keyI then
+			invisible=not invisible
 		elseif modes[a] then
 			local modeLeft=modes[mode].modeLeft
 			if modeLeft then
@@ -1233,7 +1244,7 @@ local reanimate=function()
 			end
 		end
 	end))
-
+	
 	local predictionfling=nil
 	if fling then
 		predictionfling=function(target)
@@ -1258,7 +1269,7 @@ local reanimate=function()
 			if (not IsA(target,"Model")) or (target==c) then
 				return false
 			end
-			local targetpart=gp(target,"HumanoidRootPart","BasePart") or gp(target,"Torso","BasePart") or gp(target,"UpperTorso","BasePart")
+			local targetpart=QueryDescendants(target,">BasePart#HumanoidRootPart")[1] or QueryDescendants(target,">BasePart#Torso")[1] or QueryDescendants(target,">BasePart#UpperTorso")[1]
 			if (not targetpart) or (flingtable[targetpart]~=nil) then
 				return false
 			end
@@ -1269,9 +1280,9 @@ local reanimate=function()
 				local h=i("Highlight")
 				insSet(h,"Name",rs())
 				insSet(h,"Adornee",target)
-				insSet(h,"FillColor",c3(1,0,0))
+				--insSet(h,"FillColor",c3(1,0,0))
 				insSet(h,"OutlineColor",c3(1,0,0))
-				insSet(h,"FillTransparency",0.5)
+				insSet(h,"FillTransparency",0.5) -- 1
 				insSet(h,"OutlineTransparency",0)
 				insSet(h,"Parent",guiparent)
 				flingtable[targetpart]=h
@@ -1280,10 +1291,18 @@ local reanimate=function()
 			end
 			return true
 		end
+		--[[if highlightflingtargets and rainbowflinghighlights then
+			local c3hsv=Color3.fromHSV
+			tinsert(cons,Connect(insGet(rus,"RenderStepped"),function()
+				local c=c3hsv((sine*0.3)%1,1,1)
+				for i,v in next,flingtable do
+					insSet(v,"OutlineColor",c)
+				end
+			end))
+		end]]
 	else
 		predictionfling=emptyfunction
 	end
-
 	if ctrlclicktp then
 		ctrlclicktp=KeyCode.LeftControl
 		local tpoff=v3_010*3
@@ -1324,6 +1343,7 @@ local reanimate=function()
 	local noYvelTime=1
 	local lastsine=sine
 	local con=nil
+	local onground=nil
 	local mainFunction=function()
 		if not c then 
 			for i,v in next,cframes do
@@ -1360,40 +1380,47 @@ local reanimate=function()
 
 		if shiftlock then
 			if allowshiftlock then
-				mouseBehavior=enumMLC
+				if mouseBehavior~=enumMLC then
+					mouseBehavior=enumMLC
+					insSet(uis,"MouseBehavior",mouseBehavior)
+				end
 				mouseCameraMove=true
 			else
 				shiftlock=false
 			end
 		elseif firstperson then
-			mouseBehavior=enumMLC
+			if mouseBehavior~=enumMLC then
+				mouseBehavior=enumMLC
+				insSet(uis,"MouseBehavior",mouseBehavior)
+			end
 			mouseCameraMove=true
 		elseif IsMouseButtonPressed(uis,enumMB2) then
-			mouseBehavior=enumMLCP
+			if mouseBehavior~=enumMLCP then
+				mouseBehavior=enumMLCP
+				insSet(uis,"MouseBehavior",mouseBehavior)
+			end
 			mouseCameraMove=true
 		else
-			mouseBehavior=enumMD
+			if mouseBehavior~=enumMD then
+				mouseBehavior=enumMD
+				insSet(uis,"MouseBehavior",mouseBehavior)
+			end
 			mouseCameraMove=false
-		end
-		if lastMouseBehavior~=mouseBehavior then
-			lastMouseBehavior=mouseBehavior
-			insSet(uis,"MouseBehavior",mouseBehavior)
 		end
 
 		local raycastresult=Raycast(ws,pos,v3_010*(fpdh-v3Get(pos,"Y")),raycastparams)
-		local onground=nil
 		if raycastresult then
-			raycastresult=v3Get(raycastresult.Position,"Y")
-			onground=v3Get(pos,"Y")-raycastresult<hhOff1
+			onground=raycastresult.Distance<hhOff1
 			if onground then
 				Yvel=0
-				pos=pos+v3_010*(raycastresult+hhOff-v3Get(pos,"Y"))*min(delta*20,1)
+				pos=pos+v3_010*(v3Get(raycastresult.Position,"Y")+hhOff-v3Get(pos,"Y"))*min(delta*20,1)
 				if jumpingInput and (jumpPower>0) then
 					Yvel=jumpPower
 					onground=false
 				end
 			else
 				Yvel=Yvel-gravity*delta
+				raycastresult=v3Get(raycastresult.Position,"Y")
 				if v3Get(pos,"Y")+Yvel*delta<raycastresult then
 					Yvel=0
 					pos=pos+v3_010*(raycastresult+hhOff-v3Get(pos,"Y"))
@@ -1675,7 +1702,9 @@ local reanimate=function()
 		local claimposY=v3Get(claimpos,"Y")
 		for i,v in next,cframes do
 			local part=i.p
-
+			if invisible then
+				v=cfAdd(v,invisibleoffset)
+			end
 			if part then
 				if insGet(part,"ReceiveAge")==0 then
 					local placeholder=i.v
@@ -1888,6 +1917,15 @@ local reanimate=function()
 	local setCameraMoveable=function(b) --prevents the player from moving his camera
 		cameraMoveable=b
 	end
+	local isOnGround=function()
+		return onground
+	end
+	local isWalking=function()
+		return isWalking
+	end
+	local YvelSign=function()
+		return Yvel>0
+	end
 
 	return {
 		cframes=cframes,
@@ -1916,10 +1954,26 @@ local reanimate=function()
 		isFirstPerson=isFirstPerson,
 		setHipHeight=setHipHeight,
 		characters=characters,
-		refreshrayfilter=refreshrayfilter,
-		setCameraMoveable=setCameraMoveable
+		refreshrayfilter=function()
+			for i,v in next,characters do
+				if i==v then
+					pcall(insSet,QueryDescendants(i,">BasePart#HumanoidRootPart")[1],"Anchored",true)
+				end
+			end
+			refreshrayfilter()
+		end,
+		setCameraMoveable=setCameraMoveable,
+		isOnGround=isOnGround,
+		isWalking=isWalking,
+		YvelSign=YvelSign
 	}
 end
 
-_G.GenesisFDless={reanimate=reanimate,stopreanimate=stopreanimate,gp=gp,rs=rs,insSet=insSet,insGet=insGet,cfMul=cfMul,mouse=mouse,isReanimated=function() return c end,ConvertResources=ConvertResources}
+-- gp backwards compatibility \240\159\151\191
+local gp=function(p,n,c)
+	return QueryDescendants(p,">"..c.."[Name=\""..n.."\"]")[1]
+end
+
+-- again no need to load the whole thing cuz u can use the last one
+_G.GenesisFDless={reanimate=reanimate,stopreanimate=stopreanimate,gp=gp,rs=rs,insSet=insSet,insGet=insGet,cfMul=cfMul,mouse=mouse,isReanimated=function() return c end}
 return _G.GenesisFDless
