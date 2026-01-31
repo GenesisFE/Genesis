@@ -672,7 +672,8 @@ local reanimate=function()
 					t.p=nil
 				end
 				if refit and c then
-					onrefit()
+					--onrefit()
+					SetCore(sg,"SendNotification",{Title="Refit",Text="One or more accessories got removed. Respawning...",Duration=10})
 					replicatesignal(cdsb)
 				end
 			end
