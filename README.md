@@ -1,7 +1,7 @@
 <h1 align="center">GENESIS FE</h1>
 
 <p align="center">
-  FE 🎩 scripts made by <code>@rqz</code>
+  FE 🎩 scripts made by <code>@myworlds (not to be confused why MyWorld)</code>
 </p>
 
 ![GENESIS FE](https://i.imgur.com/hBMJZwv.png)
