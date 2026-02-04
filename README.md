@@ -16,7 +16,7 @@ You can access my scripts via the ``loadstring`` folder above, it has all the cu
 
 ## Features
 
-- Hat reanimation using ``FDless`` reanimate
+- Hat reanimation using ``FDless`` reanimate by MyWorld
 - Permadeath / Looprespawn Hybrid (via settings or flinging with permadeath)
 - QOL settings to change how the scripts work on the loadstring
 - Variety of converts with optimization as the core focus
@@ -30,10 +30,10 @@ You can access my scripts via the ``loadstring`` folder above, it has all the cu
 
 ## Credits
 
-- ``@rqz`` Owner, scripter, media producer
+- ``John Doe`` Owner, scripter, media producer
 - ``MyWorld`` Partnership with HAX
 
 ## Socials
 
 - **Youtube:** https://www.youtube.com/channel/UC1-1EmuWIW9svGZBe70J8bA/ (GENESIS-FE)
-- **Discord:** ``@rqz``
+- **Discord:** ``@myworlds (not to be confused with myworld)``
