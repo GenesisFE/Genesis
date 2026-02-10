@@ -315,7 +315,8 @@ end
 local simrad=simrad~=false
 local hidedeatheffect=hidedeatheffect~=false
 
-local permadeath=permadeath~=false
+--local permadeath=permadeath~=false
+local permadeath=false
 local refit=refit~=false 
 local onrefit=onrefit
 
