@@ -317,7 +317,7 @@ local hidedeatheffect=hidedeatheffect~=false
 
 --local permadeath=permadeath~=false
 local permadeath=false
-local refit=refit~=false 
+local refit=false
 local onrefit=onrefit
 
 local c=nil
