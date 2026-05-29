@@ -1,7 +1,7 @@
 <h1 align="center">GENESIS FE</h1>
 
 <p align="center">
-  FE 🎩 scripts made by <code>@myworlds (not to be confused why MyWorld)</code>
+  FE 🎩 scripts made by <code>@rqz</code>
 </p>
 
 ![GENESIS FE](https://i.imgur.com/hBMJZwv.png)
@@ -30,10 +30,10 @@ You can access my scripts via the ``loadstring`` folder above, it has all the cu
 
 ## Credits
 
-- ``John Doe`` Owner, scripter, media producer
+- ``rqz`` Owner, scripter, media producer
 - ``MyWorld`` Partnership with HAX
 
 ## Socials
 
 - **Youtube:** https://www.youtube.com/channel/UC1-1EmuWIW9svGZBe70J8bA/ (GENESIS-FE)
-- **Discord:** ``@myworlds (not to be confused with myworld)``
+- **Discord:** ``@rqz``
