@@ -34,7 +34,6 @@ breakjointsmethod = 1 --breakjoints mode
 -- 3 - breakjoints
 simrad = true --sets simulation radius
 
-
 --==========================================================================================================================--
 
 loadstring(game:HttpGet("https://raw.githubusercontent.com/GenesisFE/Genesis/main/Obfuscations/AK-47"))()
