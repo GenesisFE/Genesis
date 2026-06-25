@@ -33,6 +33,7 @@ breakjointsmethod = 1 --breakjoints mode
 -- 2 - health or breakjoints
 -- 3 - breakjoints
 simrad = true --sets simulation radius
+-- test
 
 --==========================================================================================================================--
 
