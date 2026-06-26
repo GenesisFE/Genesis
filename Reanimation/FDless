@@ -1,22 +1,15 @@
+--!optimize 2
 --no need to load the whole thing cuz u can use the last one
 if _G.GenesisFDless then 
 	game:FindFirstChildOfClass("StarterGui"):SetCore("SendNotification",{Title="FDLESS",Text="Using FDless loaded by previously executed scripts to prevent reanimate conflicts. Rejoin to update reanimate settings.",Duration=10})
 	return _G.GenesisFDless 
 end
 
-
 --oh you're still here? queue the reanimate
 
 --[[
-	FDless Reanimate by...
-	███    ███ ██    ██ ██     ██  ██████  ██████  ██      ██████  TM
-	████  ████  ██  ██  ██     ██ ██    ██ ██   ██ ██      ██   ██ 
-	██ ████ ██   ████   ██  █  ██ ██    ██ ██████  ██      ██   ██ 
-	██  ██  ██    ██    ██ ███ ██ ██    ██ ██   ██ ██      ██   ██ 
-	██      ██    ██     ███ ███   ██████  ██   ██ ███████ ██████  
-	
-	"i have decided this shall not die yet" - myworld and sheet
-	
+	FDless Reanimate by MyWorld continued by rqz
+	"better and better till patched, then switch"
 	Patchma Hub Discord: https://discord.com/invite/QMy5f6DrbH
 ]]
 
@@ -30,12 +23,18 @@ local sfind=string.find
 local supper=string.upper
 local mrandom=math.random
 local sin=math.sin
+local cos=math.cos
+local abs=math.abs
 local min=math.min
+local sqrt=math.sqrt
 local clamp=math.clamp
 local tinsert=table.insert
 local tclear=table.clear
 local tclone=table.clone
 local tfind=table.find
+local cyield=coroutine.yield
+local cresume=coroutine.resume
+local crunning=coroutine.running
 local vmagnitude=vector.magnitude --faster than indexing with Magnitude
 local vnormalize=vector.normalize --faster than indexing with Unit
 
@@ -56,8 +55,11 @@ local c3=Color3.new
 local cf=CFrame.new
 local cfl=CFrame.lookAt
 local angles=CFrame.fromEulerAngles --faster than .Angles
+local u2=UDim2.new 
 local e=Enum 
 local rp=RaycastParams.new 
+local cs=ColorSequence.new 
+local csk=ColorSequenceKeypoint.new 
 
 local sine=osclock()
 local deltaTime=0
@@ -68,7 +70,8 @@ local cf_0=cf()
 local v3_xz=v3_101*10
 local v3_xzL=v3_101*250.1
 local v3_net=v3_010*25.01
-local pdloadedtime=nil
+
+local enumMD=e.MouseBehavior.Default
 
 --not "local function rs" to not assign debug names
 local rs=function()
@@ -125,21 +128,23 @@ local gs=FindFirstChildOfClass(game,"GuiService")
 local sg=FindFirstChildOfClass(game,"StarterGui")
 local lp=insGet(plrs,"LocalPlayer")
 local pg=FindFirstChildOfClass(lp,"PlayerGui")
-local cg=FindFirstChildOfClass(game,"CoreGui")
 local mouse=insGet(lp,"GetMouse")(lp)
---local cdsb=insGet(lp,"ConnectDiedSignalBackend")
 local rst=insGet(plrs,"RespawnTime")+0.07 --1/15
 local preanimation=insGet(rus,"PreAnimation")
+local stepped=insGet(rus,"Stepped")
 local heartbeat=insGet(rus,"Heartbeat")
+local renderstepped=insGet(rus,"RenderStepped")
 
 local GetPlayers=insGet(plrs,"GetPlayers")
+local GetJoints=insGet(insGet(ws,"Terrain"),"GetJoints")
+local SetCore=insGet(sg,"SetCore")
 local SetCoreGuiEnabled=insGet(sg,"SetCoreGuiEnabled")
 local GetCoreGuiEnabled=insGet(sg,"GetCoreGuiEnabled")
-local SetCore=sg.SetCore
 local Raycast=insGet(ws,"Raycast")
 local Connect=heartbeat.Connect
 local Disconnect=Connect(GetPropertyChangedSignal(game,"CreatorId"),type).Disconnect
 local Wait=heartbeat.Wait
+local GetMouseLocation=insGet(uis,"GetMouseLocation")
 local GetFocusedTextBox=insGet(uis,"GetFocusedTextBox")
 local GetMouseDelta=insGet(uis,"GetMouseDelta")
 local IsMouseButtonPressed=insGet(uis,"IsMouseButtonPressed")
@@ -148,130 +153,128 @@ local IsKeyDown=insGet(uis,"IsKeyDown")
 local Inverse=cfGet(cf_0,"Inverse")
 local Lerp=cfGet(cf_0,"Lerp")
 
-local accessorylimbs={
+local aligns={
+	--[[
+		example: 
+		{PartName="Right Arm",meshid="123456789",textureid="123456789",AccessoryName="Name",C0=cf(1,2,3)*angles(1,2,3)},
+
+		PartName (required) - the name of the body part you want to align the hat to
+		meshid (optional) - mesh id of the mesh of the accessory you want to align
+		textureid (optional) - texture id of the mesh of the accessory you want to align
+		AccessoryName (optional) - instance name of the accessory you want to align 
+		C0 (optional) - offset from the target body part to the accessory (defaults to cf(0,0,0) if unspecified)
+		
+		accessories will align to the first entry whose criteria they match
+		(unspecified meshid/textureid/accessoryname accepts all accessories)
+		
+		each entry aligns one accessory at most
+	]]
+
 	-- unknown head
-	{meshid="11601535857",textureid="",C0=angles(0,3.141592653589793,0),Name="Head"},
+	{PartName="Head",meshid="11601535857",C0=angles(0,3.141592653589793,0)},
 
 	-- patchma gear arms
-	{meshid="13831073174",textureid="",C0=cfMul(cf(0.017,0,-0.23),angles(-1.4835298641951802,-0.15707963267948966,2.199114857512855)),Name="Left Arm"},
-	{meshid="13839903766",textureid="",C0=cfMul(cf(0,-0.62,-0.01),angles(1.6580627893946132,0.15707963267948966,-2.199114857512855)),Name="Right Arm"},
+	{PartName="Left Arm",meshid="13831073174",C0=cfMul(cf(0.017,0,-0.23),angles(-1.4835298641951802,-0.15707963267948966,2.199114857512855))},
+	{PartName="Right Arm",meshid="13839903766",C0=cfMul(cf(0,-0.62,-0.01),angles(1.6580627893946132,0.15707963267948966,-2.199114857512855))},
 
 	-- patchma yellow leg
-	{meshid="11159370334",textureid="11159285454",C0=angles(1.5707963267948966,0,1.5707963267948966),Name="Left Leg"},
+	{PartName="Left Leg",meshid="11159370334",textureid="11159285454",C0=angles(1.5707963267948966,0,1.5707963267948966)},
 
 	-- patchma lego piece leg
-	{meshid="12652772399",textureid="12652775021",C0=cf(0,-0.125,0),Name="Right Leg"},
+	{PartName="Right Leg",meshid="12652772399",textureid="12652775021",C0=cf(0,-0.125,0)},
 
 	-- offsale white rig
 	-- a ton of offsaled black torso's
-	{meshid="14768666349",textureid="",C0=cf_0,Name="Torso"},
-	{meshid="14241018198",textureid="",C0=cf_0,Name="Torso"},
-	{meshid="13421774668",textureid="",C0=cf_0,Name="Torso"},
-	{meshid="14255522247",textureid="",C0=angles(1.5707963267948966,0,1.5707963267948966),Name="Left Leg"},
-	{meshid="14255522247",textureid="",C0=angles(-1.5707963267948966,0,1.5707963267948966),Name="Right Leg"},
-	{meshid="14768684979",textureid="",C0=angles(0,0,1.5707963267948966),Name="Left Arm"},
-	{meshid="14768684979",textureid="",C0=angles(0,0,1.5707963267948966),Name="Right Arm"},
+	{PartName="Torso",meshid="14768666349"},
+	{PartName="Torso",meshid="14241018198"},
+	{PartName="Torso",meshid="13421774668"},
+	{PartName="Left Leg",meshid="14255522247",C0=angles(1.5707963267948966,0,1.5707963267948966)},
+	{PartName="Right Leg",meshid="14255522247",C0=angles(-1.5707963267948966,0,1.5707963267948966)},
+	{PartName="Left Arm",meshid="14768684979",C0=angles(0,0,1.5707963267948966)},
+	{PartName="Right Arm",meshid="14768684979",C0=angles(0,0,1.5707963267948966)},
 
 	-- og fur body, r15 arms, smiley legs rig
-	{meshid="13953154391",textureid="",C0=cf_0,Name="Head"},
-	{meshid="13778226115",textureid="",C0=cf_0,Name="Torso"},
-	{meshid="11159370334",textureid="11159284657",C0=angles(1.5707963267948966,0,1.5707963267948966),Name="Left Leg"},
-	{meshid="11263221350",textureid="11263219250",C0=angles(-1.5707963267948966,0,1.5707963267948966),Name="Right Leg"},
-	{meshid="12344207333",textureid="",C0=angles(2,0,0),Name="Left Arm"},
-	{meshid="12344206657",textureid="",C0=angles(2,0,0),Name="Right Arm"},
+	{PartName="Head",meshid="13953154391"},
+	{PartName="Torso",meshid="13778226115"},
+	{PartName="Left Leg",meshid="11159370334",textureid="11159284657",C0=angles(1.5707963267948966,0,1.5707963267948966)},
+	{PartName="Right Leg",meshid="11263221350",textureid="11263219250",C0=angles(-1.5707963267948966,0,1.5707963267948966)},
+	{PartName="Left Arm",meshid="12344207333",C0=angles(2,0,0)},
+	{PartName="Right Arm",meshid="12344206657",C0=angles(2,0,0)},
 
 	-- torso for both "white limbs black torso rig" and "black rig"
-	{meshid="110684113028749",textureid="",C0=cf_0,Name="Torso"},
+	{PartName="Torso",meshid="110684113028749"},
 	-- white limbs black torso rig
-	{meshid="13058343355",textureid="",C0=angles(0,3.141592653589793,0),Name="Head"},
-	{meshid="139733645770094",textureid="",C0=angles(0,0,1.5707963267948966),Name="Left Leg"},
-	{meshid="99608462237958",textureid="",C0=angles(0,0,1.5707963267948966),Name="Right Leg"},
-	{meshid="90736849096372",textureid="",C0=angles(0,0,1.5707963267948966),Name="Left Arm"},
-	{meshid="105141400603933",textureid="",C0=angles(0,0,1.5707963267948966),Name="Right Arm"},
+	{PartName="Head",meshid="13058343355",C0=angles(0,3.141592653589793,0)},
+	{PartName="Left Leg",meshid="139733645770094",C0=angles(0,0,1.5707963267948966)},
+	{PartName="Right Leg",meshid="99608462237958",C0=angles(0,0,1.5707963267948966)},
+	{PartName="Left Arm",meshid="90736849096372",C0=angles(0,0,1.5707963267948966)},
+	{PartName="Right Arm",meshid="105141400603933",C0=angles(0,0,1.5707963267948966)},
 	-- head for black rigs
-	{meshid="13953153289",textureid="",C0=cf_0,Name="Head"},
+	{PartName="Head",meshid="13953153289"},
 	-- lay offsale black rig
-	{meshid="17387586286",textureid="",C0=angles(1.5707963267948966,0,1.5707963267948966),Name="Left Leg"},
-	{meshid="17387586286",textureid="",C0=angles(-1.5707963267948966,0,1.5707963267948966),Name="Right Leg"},
-	{meshid="17374767929",textureid="",C0=angles(1.5707963267948966,0,1.5707963267948966),Name="Left Arm"},
-	{meshid="17374767929",textureid="",C0=angles(-1.5707963267948966,0,1.5707963267948966),Name="Right Arm"},
-	-- onsale black rig
-	{meshid="125405780718494",textureid="",C0=angles(1.5707963267948966,0,1.5707963267948966),Name="Left Leg"},
-	{meshid="125405780718494",textureid="",C0=angles(-1.5707963267948966,0,1.5707963267948966),Name="Right Leg"},
-	{meshid="125405780718494",textureid="",C0=angles(1.5707963267948966,0,1.5707963267948966),Name="Left Arm"},
-	{meshid="125405780718494",textureid="",C0=angles(-1.5707963267948966,0,1.5707963267948966),Name="Right Arm"},
+	{PartName="Left Leg",meshid="17387586286",C0=angles(1.5707963267948966,0,1.5707963267948966)},
+	{PartName="Right Leg",meshid="17387586286",C0=angles(-1.5707963267948966,0,1.5707963267948966)},
+	{PartName="Left Arm",meshid="17374767929",C0=angles(1.5707963267948966,0,1.5707963267948966)},
+	{PartName="Right Arm",meshid="17374767929",C0=angles(-1.5707963267948966,0,1.5707963267948966)},
+	-- 7ws offsale black rig
+	{PartName="Left Leg",meshid="125405780718494",C0=angles(1.5707963267948966,0,1.5707963267948966)},
+	{PartName="Right Leg",meshid="125405780718494",C0=angles(-1.5707963267948966,0,1.5707963267948966)},
+	{PartName="Left Arm",meshid="125405780718494",C0=angles(1.5707963267948966,0,1.5707963267948966)},
+	{PartName="Right Arm",meshid="125405780718494",C0=angles(-1.5707963267948966,0,1.5707963267948966)},
 
 	-- meshless rig
-	{meshid="13953094351",textureid="",C0=cf_0,Name="Head"},
-	{meshid="127552124837034",textureid="",C0=angles(0,0,1.5707963267948966),Name="Torso"},
-	{meshid="121304376791439",textureid="",C0=cf_0,Name="Left Leg"},
-	{meshid="121304376791439",textureid="",C0=cf_0,Name="Right Leg"},
-	{meshid="117287001096396",textureid="",C0=cf_0,Name="Left Arm"},
-	{meshid="117287001096396",textureid="",C0=cf_0,Name="Right Arm"},
+	{PartName="Head",meshid="13953094351"},
+	{PartName="Torso",meshid="127552124837034",C0=angles(0,0,1.5707963267948966)},
+	{PartName="Left Leg",meshid="121304376791439"},
+	{PartName="Right Leg",meshid="121304376791439"},
+	{PartName="Left Arm",meshid="117287001096396"},
+	{PartName="Right Arm",meshid="117287001096396"},
 
 	-- head for noob rig
-	{meshid="13058309233",textureid="",C0=angles(0,3.141592653589793,0),Name="Head"},
-	-- lay offsale noob
-	{meshid="18640899369",textureid="",C0=cf_0,Name="Torso"},
-	{meshid="18640901641",textureid="",C0=cf_0,Name="Left Leg"},
-	{meshid="18640901641",textureid="",C0=cf_0,Name="Right Leg"},
-	{meshid="18640914129",textureid="",C0=cf_0,Name="Left Arm"},
-	{meshid="18640914129",textureid="",C0=cf_0,Name="Right Arm"},
-	-- onsale noob
-	{meshid="126825022897778",textureid="",C0=cf_0,Name="Torso"},
-	{meshid="",textureid="73798034827573",C0=angles(0,0,1.5707963267948966),Name="Left Leg"},
-	{meshid="",textureid="73798034827573",C0=angles(0,0,1.5707963267948966),Name="Right Leg"},
-	{meshid="",textureid="135650240593878",C0=angles(0,0,1.5707963267948966),Name="Left Arm"},
-	{meshid="",textureid="135650240593878",C0=angles(0,0,1.5707963267948966),Name="Right Arm"},
+	{PartName="Head",meshid="13058309233",C0=angles(0,3.141592653589793,0)},
+	-- lay offsale noob rig
+	{PartName="Torso",meshid="18640899369"},
+	{PartName="Left Leg",meshid="18640901641"},
+	{PartName="Right Leg",meshid="18640901641"},
+	{PartName="Left Arm",meshid="18640914129"},
+	{PartName="Right Arm",meshid="18640914129"},
+	-- 7ws offsale noob rig
+	{PartName="Torso",meshid="126825022897778"},
+	{PartName="Left Leg",textureid="73798034827573",C0=angles(0,0,1.5707963267948966)},
+	{PartName="Right Leg",textureid="73798034827573",C0=angles(0,0,1.5707963267948966)},
+	{PartName="Left Arm",textureid="135650240593878",C0=angles(0,0,1.5707963267948966)},
+	{PartName="Right Arm",textureid="135650240593878",C0=angles(0,0,1.5707963267948966)},
 
 	-- white torso
-	{meshid="126825022897778",textureid="",C0=cf_0,Name="Torso"},
+	{PartName="Torso",meshid="126825022897778"},
 
-	-- lay onsale gray torso white arm black leg
-	{meshid="139792224823925",textureid="",C0=cf_0,Name="Torso"},
-	{meshid="83395427313429",textureid="",C0=angles(0,0,1.5707963267948966),Name="Left Leg"},
-	{meshid="83395427313429",textureid="",C0=angles(0,0,1.5707963267948966),Name="Right Leg"},
-	{meshid="105263225400272",textureid="",C0=angles(0,0,1.5707963267948966),Name="Left Arm"},
-	{meshid="105263225400272",textureid="",C0=angles(0,0,1.5707963267948966),Name="Right Arm"},
+	-- lay onsale gray torso white arm black leg rig
+	{PartName="Torso",meshid="139792224823925"},
+	{PartName="Left Leg",meshid="83395427313429",C0=angles(0,0,1.5707963267948966)},
+	{PartName="Right Leg",meshid="83395427313429",C0=angles(0,0,1.5707963267948966)},
+	{PartName="Left Arm",meshid="105263225400272",C0=angles(0,0,1.5707963267948966)},
+	{PartName="Right Arm",meshid="105263225400272",C0=angles(0,0,1.5707963267948966)},
+
+	-- shownape/geecee auto rig
+	{PartName="Head",AccessoryName="Accessory (autorig_Head)"},
+	{PartName="Torso",AccessoryName="Accessory (autorig_Torso)"},
+	{PartName="Left Leg",AccessoryName="Accessory (autorig_LeftLeg)"},
+	{PartName="Right Leg",AccessoryName="Accessory (autorig_RightLeg)"},
+	{PartName="Left Arm",AccessoryName="Accessory (autorig_LeftArm)"},
+	{PartName="Right Arm",AccessoryName="Accessory (autorig_RightArm)"},
 
 	-- free rig
-	{meshid="4819720316",textureid="4819722776",C0=angles(0,0,0.2617993877991494),Name="Torso"},
-	{meshid="4094864753",textureid="4094881938",C0=angles(0,0,-1.5707963267948966),Name="Left Leg"},
-	{meshid="4154474745",textureid="4154474807",C0=angles(0,0,1.5707963267948966),Name="Right Leg"},
-	{meshid="4489232754",textureid="4489233876",C0=angles(0,0,-1.5707963267948966),Name="Left Arm"},
-	{meshid="4324138105",textureid="4391374782",C0=angles(0,0,1.5707963267948966),Name="Right Arm"},
+	{PartName="Left Arm",meshid="4324138105",textureid="4324138210",C0=angles(-1.6144295580947547,1.5707963267948966,0)*cf(-0.125,0.3,0)},
+	{PartName="Left Arm",meshid="4154474745",textureid="4154474807",C0=angles(1.5271630954950384,-1.5707963267948966,0)*cf(-0.125,-0.3,0)},
+	{PartName="Right Arm",meshid="3030546036",textureid="3650191503",C0=angles(1.5271630954950384,1.5707963267948966,0)*cf(0.125,-0.3,0)},
+	{PartName="Right Arm",meshid="3030546036",textureid="3443321249",C0=angles(-1.6144295580947547,-1.5707963267948966,0)*cf(0.125,0.3,0)},
+	{PartName="Left Leg",meshid="3030546036",textureid="3360974849",C0=angles(1.5271630954950384,1.5707963267948966,0)*cf(-0.125,-0.35,0)},
+	{PartName="Left Leg",meshid="3030546036",textureid="3360978739",C0=angles(-1.6144295580947547,-1.5707963267948966,0)*cf(-0.125,0.3,0)},
+	{PartName="Right Leg",meshid="3030546036",textureid="3033898741",C0=angles(1.5271630954950384,-1.5707963267948966,0)*cf(0.125,-0.35,0)},
+	{PartName="Right Leg",meshid="3030546036",textureid="3409604993",C0=angles(-1.6144295580947547,1.5707963267948966,0)*cf(0.125,0.3,0)},
+	{PartName="Torso",meshid="4819720316",textureid="4819722776",C0=angles(0,0,0.2617993877991494)}
 }
 
-local guiparent=nil
-if pcall(FindFirstChildOfClass,cg,"ScreenGui") then
-	guiparent=cg
-else
-	guiparent=pg
-end
-
---querydescendants faster than getchildren and checks in lua
-local timeQueryDescendants=function(p,s,t)
-	t=osclock()+t
-	local refresh=true
-	local con=Connect(insGet(p,"DescendantAdded"),function()
-		refresh=true
-	end)
-	local res=nil
-	repeat
-		if refresh then
-			res=QueryDescendants(p,s)
-			if next(res) then
-				--not using break to have one less jump opcode
-				Disconnect(con)
-				return res
-			end
-			refresh=false
-		end
-		Wait(preanimation)
-	until (osclock()>t)
-	Disconnect(con)
-	return res
-end
 local makeplaceholder=function(v)
 	if not insGet(v,"Archivable") then
 		insSet(v,"Archivable",true)
@@ -293,20 +296,21 @@ local makeplaceholder=function(v)
 	insSet(v,"Transparency",0.25)
 	return v
 end
-
 local emptyfunction=function() end
+
 local fling=fling~=false
 local allowshiftlock=allowshiftlock~=false
 local ctrltp=ctrltp~=false
-local invisiblekeybind=false --invisiblekeybind~=false
-local invisibleoffset=(type(invisibleoffset)=="number" and v3_010*-invisibleoffset) or v3_010*-100
+--local invisiblekeybind=false --invisiblekeybind~=false
+--local invisibleoffset=(type(invisibleoffset)=="number" and v3_010*-invisibleoffset) or v3_010*-100
 local placeholders=placeholders~=false
 local clickfling=clickfling==true
 local highlightflingtargets=highlightflingtargets~=false
 local rainbowflinghighlights=rainbowflinghighlights~=false
 local discharscripts=discharscripts~=false and function(v) if IsA(v,"Script") then insSet(v,"Disabled",true) end end
-local flingchangestate=flingchangestate~=false
+local flingchangestate=(type(flingchangestate)=="number" and flingchangestate) or 3
 local respawntp=(type(respawntp)=="number" and respawntp) or 3
+local disguiscripts=disguiscripts~=false
 local breakjointsmethod=(type(breakjointsmethod)=="number" and breakjointsmethod) or 1
 if (breakjointsmethod==4) and not replicatesignal then
 	SetCore(sg,"SendNotification",{Title="FDLESS SERVERBREAKJOINTS",Text="Your executor does not support ReplicateSignal! Please see #supported-clients channel."})
@@ -315,60 +319,52 @@ end
 local simrad=simrad~=false
 local hidedeatheffect=hidedeatheffect~=false
 
---local permadeath=permadeath~=false
-local permadeath=false
-local refit=false
-local onrefit=onrefit
-
 local c=nil
+local cons={}
+local cframes={}
+local hrpcon0=nil
+local hrpcon1=nil
+local flingtable={}
+local plrcleanups={}
+local onnewcamera=nil
 local stopreanimate=function() 
 	if c then
 		c=nil
-		if permadeath then
-			replicatesignal(cdsb)
+		for i,v in next,cframes do
+			local p=i.v
+			if p then
+				Destroy(p)
+			end
 		end
+		tclear(cframes)
+		if hrpcon0 then
+			Disconnect(hrpcon0)
+			Disconnect(hrpcon1)
+			hrpcon0=nil
+		end
+		for i,v in next,flingtable do
+			if v then --it could be false
+				Destroy(v)
+			end
+		end
+		tclear(flingtable)
+		for i,v in next,cons do
+			Disconnect(v)
+		end
+		tclear(cons)
+		for i,cleanupfunc in next,plrcleanups do
+			cleanupfunc()
+		end
+		tclear(plrcleanups)
+		insSet(uis,"MouseBehavior",enumMD)
+		onnewcamera()
 		return true
 	end
 	return false
 end
-if permadeath then
-	if replicatesignal then
-		replicatesignal(cdsb)
-		pdloadedtime=osclock()+rst
-		local lastc=nil
-		local hdied=function()
-			if not c then
-				replicatesignal(cdsb)
-				pdloadedtime=osclock()+rst
-			end
-		end
-		Connect(GetPropertyChangedSignal(lp,"Character"),function()
-			local c=lp.Character
-			if c and c~=lastc then
-				lastc=c
-				replicatesignal(cdsb)
-				pdloadedtime=osclock()+rst
-				while lastc==c do
-					local h=FindFirstChildOfClass(c,"Humanoid")
-					if h then
-						Connect(insGet(h,"Died"),hdied)
-						return
-					end
-					Wait(preanimation)
-				end
-			end
-		end)
-	else
-		SetCore(sg,"SendNotification",{Title="FDLESS PERMADEATH",Text="Your executor does not support ReplicateSignal! Please see #supported-clients channel."})
-		permadeath=false
-		refit=false
-	end
-else
-	pdloadedtime=nil
-end
 local reanimate=function()
 	--[[
-		FDless reanimate by MyWorld
+		FDless reanimate by MyWorld continued by rqz
 		optimize the optimized
 	]]
 
@@ -379,17 +375,11 @@ local reanimate=function()
 	local jumpPower = 50 --your jump power (can be changed at runtime)
 	local gravity = 196.2 --how fast the characters velocity decreases while falling (can be changed at runtime)
 	local ctrlclicktp = ctrltp --makes you teleport where u point ur mouse cursor at when click and hold ctrl down
-	local invisible = false --moves your parts underground so you are not visible by pressing "i"
+	--local invisible = false --moves your parts underground so you are not visible by pressing "i"
 	local clickfling = clickfling --makes you fling the person you clicked when its available to do so
 	local flingvel = v3(15000,16000,15000) --the rotation velocity that ur character will have while flinging
 
 	if stopreanimate() then return end
-	c=insGet(lp,"Character")
-	if not (c and IsDescendantOf(c,ws)) then return end
-
-
-	local rootpart=QueryDescendants(c,">BasePart#HumanoidRootPart")[1] or QueryDescendants(c,">BasePart#Torso")[1] or QueryDescendants(c,">BasePart#UpperTorso")[1] or timeQueryDescendants(c,">BasePart#HumanoidRootPart",10)[1] or FindFirstChildWhichIsA(c,"BasePart")
-	if not rootpart then return end
 
 	local cam=nil
 	--theres a way to have ws.currentcamera nil on heartbeat and still have the game run normally
@@ -408,7 +398,7 @@ local reanimate=function()
 	local camcon0=nil
 	local camcon1=nil
 	local camcon2=nil
-	local onnewcamera=function()
+	onnewcamera=function()
 		refcam()
 		if camcon0 then 
 			Disconnect(camcon0)
@@ -439,18 +429,32 @@ local reanimate=function()
 		end
 	end
 	camcon2=Connect(GetPropertyChangedSignal(ws,"CurrentCamera"),onnewcamera)
-	onnewcamera()
 
-	local velYdelta=insGet(ws,"Gravity")*0.025
+	local wsGravity=insGet(ws,"Gravity")
 	Connect(GetPropertyChangedSignal(ws,"Gravity"),function()
-		velYdelta=insGet(ws,"Gravity")*0.025
+		wsGravity=insGet(ws,"Gravity")
 	end)
 
 	local fpdh=insGet(ws,"FallenPartsDestroyHeight")
 	novoid=novoid and (fpdh+1)
 
+	local cfr=nil
+	c=insGet(lp,"Character")
+	if c and IsDescendantOf(c,ws) then
+		cfr=QueryDescendants(c,">BasePart#HumanoidRootPart")[1] or QueryDescendants(c,">BasePart#Torso")[1] or QueryDescendants(c,">BasePart#UpperTorso")[1] or (c and FindFirstChildWhichIsA(c,"BasePart"))
+		if cfr then
+			cfr=insGet(cfr,"CFrame")
+		else
+			cfr=cfMul(insGet(cam,"Focus"),cf(0,-1.5,0))
+		end
+	else
+		c=true
+		cfr=cfMul(insGet(cam,"Focus"),cf(0,-1.5,0))
+	end
+
+	onnewcamera()
+
 	local Yvel=0
-	local cfr=insGet(rootpart,"CFrame")
 	local pos=cfGet(cfr,"Position")
 	cfr=cfl(pos,pos+cfGet(cfr,"LookVector")*v3_101)
 	local primarypart=nil
@@ -460,9 +464,9 @@ local reanimate=function()
 	local v3_0150=v3_010*1.5
 	local camcfLV=cfGet(camcf,"LookVector")
 	local camrot=cfl(v3_0,camcfLV)
-	local camrotX,camrotY=camrot:ToEulerAnglesYXZ()
+	local camrotX,camrotY=cfGet(camrot,"ToEulerAnglesYXZ")(camrot)
 	local camcfRV=cfGet(camrot,"RightVector")
-	local cammag=-vmagnitude(cfGet(camcf,"Position")-(pos+v3_0150))
+	local cammag=-vmagnitude((cfGet(camcf,"Position")-(pos+v3_0150)))
 
 	local R6parts={ 
 		head={Name="Head"},
@@ -473,8 +477,7 @@ local reanimate=function()
 		leftLeg={Name="Left Leg"},
 		rightLeg={Name="Right Leg"}
 	}
-	rootpart=R6parts.root
-	local cframes={}
+	local rootpart=R6parts.root
 	for i,v in next,R6parts do
 		cframes[v]=cfr
 	end
@@ -608,7 +611,6 @@ local reanimate=function()
 		p.j=j
 		return p
 	end
-
 	local getPartJoint=function(p)
 		if cframes[p] then
 			local j=p.j
@@ -645,10 +647,15 @@ local reanimate=function()
 		end
 		raycastparams.FilterDescendantsInstances=rayfilter
 	end
-	local flingtable={}
 	local rootparts={}
-	for i,v in next,accessorylimbs do
-		v.p=getPart(v.Name)
+	for i,v in next,aligns do
+		v.p=getPart(v.PartName)
+		if not v.meshid then
+			v.meshid=""
+		end 
+		if not v.textureid then
+			v.textureid=""
+		end 
 	end
 	local makePartCons=function(p,t)
 		if (t.p==p) and insGet(p,"Anchored") then
@@ -672,15 +679,11 @@ local reanimate=function()
 				if t.p==p then
 					t.p=nil
 				end
-				if refit and c then
-					--onrefit()
-					replicatesignal(cdsb)
-				end
 			end
 		end)
 	end
 	local ondes=function(v)
-		if c and IsA(v,"Attachment") and IsDescendantOf(c,ws) then
+		if IsA(v,"Attachment") then
 			local v1=attachments[insGet(v,"Name")]
 			if v1 then
 				local p=insGet(v,"Parent")
@@ -704,7 +707,7 @@ local reanimate=function()
 					for i,_ in next,cframes do
 						if (meshid==i.m) and (textureid==i.t) then
 							local p1=i.p
-							if p1 and IsDescendantOf(p1,c) then
+							if p1 then
 								if p1==p then
 									return
 								end
@@ -731,8 +734,9 @@ local reanimate=function()
 							end
 						end
 					end
-					for i,l in next,accessorylimbs do
-						if l.p and sfind(meshid,l.meshid) and sfind(textureid,l.textureid) then
+					local n=insGet(insGet(p,"Parent"),"Name")
+					for i,l in next,aligns do
+						if l.p and sfind(meshid,l.meshid) and sfind(textureid,l.textureid) and ((not l.AccessoryName) or (l.AccessoryName==n)) then
 							local t={Name=insGet(p,"Name"),l=insGet(p,"Position"),m=meshid,t=textureid,p=p}
 							makePartCons(p,t)
 							if placeholders then
@@ -740,7 +744,7 @@ local reanimate=function()
 								t.b=false
 							end
 							cframes[t]=insGet(p,"CFrame")
-							tinsert(joints,{Part0=t,Part1=l.p,C0=l.C0,C1=cf_0})
+							tinsert(joints,{Part0=t,Part1=l.p,C0=l.C0 or cf_0,C1=cf_0})
 							l.p=nil
 							return
 						end
@@ -758,199 +762,268 @@ local reanimate=function()
 		end
 	end
 
-	local simradv=0
-	local charcons={}
+	local simradv=1000
 	local enumH=e.CoreGuiType.Health
 	local onplayer=function(v)
 		simradv=simradv+1000
-		local islp=v==lp
 		local lastc=nil
+		local con0=nil
+		local con1=nil
+		local refresh=nil
 		local oncharacter=function()
 			local newc=insGet(v,"Character")
-			if c and newc and (newc~=lastc) then
+			if newc and (newc~=lastc) then
 				lastc=newc
+
+				if con0 then
+					Disconnect(con0)
+					Disconnect(con1)
+					con0=nil
+				end
+
 				characters[v]=newc
 				refreshrayfilter()
-				if islp then
-					if discharscripts then
-						Connect(insGet(newc,"DescendantAdded"),discharscripts)
-						for i,v in next,QueryDescendants(newc,"Script") do
-							insSet(v,"Disabled",true)
-						end
-					end
-					local hrp=timeQueryDescendants(newc,">BasePart#HumanoidRootPart",10)[1]
-					if not (hrp and c and IsDescendantOf(newc,ws)) then return end
-					c=newc
-					local fi,fv=next(flingtable)
-					if fi then
-						if permadeath and not pdloadedtime then
-							replicatesignal(cdsb)
-							pdloadedtime=osclock()+rst
-						end
-						if flingchangestate==3 then
-							local hum=FindFirstChildOfClass(c,"Humanoid")
-							if hum then
-								insGet(hum,"ChangeState")(hum,e.HumanoidStateType.Physics)
-								insGet(hum,"SetStateEnabled")(hum,e.HumanoidStateType.Seated,false)
-							end
-						elseif flingchangestate==1 then
-							local hum=FindFirstChildOfClass(c,"Humanoid")
-							if hum then
-								insGet(hum,"ChangeState")(hum,e.HumanoidStateType.Physics)
-							end
-						elseif flingchangestate==2 then
-							local hum=FindFirstChildOfClass(c,"Humanoid")
-							if hum then
-								insGet(hum,"SetStateEnabled")(hum,e.HumanoidStateType.Seated,false)
-							end
-						end
-						for i,v in next,tclone(flingtable) do
-							if not c then
+
+				local hrp=QueryDescendants(newc,">BasePart#HumanoidRootPart")[1]
+				if hrp then
+					rootparts[v]=hrp
+				else
+					refresh=true
+					con0=Connect(preanimation,function()
+						if refresh then
+							hrp=QueryDescendants(newc,">BasePart#HumanoidRootPart")[1]
+							if hrp then
+								rootparts[v]=hrp
+								Disconnect(con0)
+								Disconnect(con1)
+								con0=nil
 								return
 							end
-							local startpos=insGet(i,"Position")
-							local stoptime=sine+3
-							while true do
-								twait()
-								if sine>stoptime then
-									break
-								end
-								if insGet(i,"Anchored") or not IsDescendantOf(i,ws) then
-									break
-								end
-								if vmagnitude(startpos-insGet(i,"Position"))>200 then
-									break
-								end
-								local tcf=cfAdd(insGet(i,"CFrame"),insGet(i,"AssemblyLinearVelocity")*(sin(sine*15)+1))
-								if novoid and (cfGet(tcf,"Y")<novoid) then
-									tcf=cfAdd(tcf,v3_010*(novoid-cfGet(tcf,"Y")))
-								end
-								insSet(hrp,"CFrame",tcf)
-								insSet(hrp,"AssemblyLinearVelocity",insGet(i,"AssemblyLinearVelocity")*v3_101*75)
-								insSet(hrp,"AssemblyAngularVelocity",flingvel)
-							end
-							if v then
-								Destroy(v)
-							end
-							flingtable[i]=nil
+							refresh=false
 						end
-						insSet(hrp,"AssemblyLinearVelocity",v3_0)
-						insSet(hrp,"AssemblyAngularVelocity",v3_0)
-						insSet(hrp,"CFrame",cfr)
-						twait(0.25)
-					end
-					if respawntp==0 then
-						twait()
-					elseif respawntp==1 then
-						local startpos=pos+v3(mrandom(-32,32),0,mrandom(-32,32))
-						local dir=nil
-						local poscheck=true
-						while poscheck do
-							poscheck=false
-							for i,v in next,rootparts do
-								local diff=(startpos-insGet(v,"Position"))*v3_101
-								if vmagnitude(diff)<10 then
-									poscheck=true
-									dir=dir or (vnormalize(diff)*3)
-									startpos=startpos+dir
-								end
-							end
-							local diff=(startpos-pos)*v3_101
-							if vmagnitude(diff)<10 then
-								poscheck=true
-								dir=dir or (vnormalize(diff)*3)
-								startpos=startpos+dir
-							end
-						end
-						startpos=cfAdd(cfGet(cfr,"Rotation"),startpos)
-						insSet(hrp,"CFrame",startpos)
-						insSet(hrp,"AssemblyLinearVelocity",v3_0)
-						insSet(hrp,"AssemblyAngularVelocity",v3_0)
-						twait(0.25)
-					elseif respawntp==2 then
-						insSet(hrp,"CFrame",cfAdd(cfr,cfGet(cfr,"RightVector")*3.5-cfGet(cfr,"LookVector")*3.5))
-						insSet(hrp,"AssemblyLinearVelocity",v3_0)
-						insSet(hrp,"AssemblyAngularVelocity",v3_0)
-						twait(0.25)
-					elseif respawntp==3 then
-						local t=osclock()+0.25
-						if pdloadedtime and pdloadedtime>t then
-							t=pdloadedtime
-						end
-						local startcf=cfAdd(cfMul(cfGet(cfr,"Rotation"),angles(1.5707963267948966,0,0)),pos*v3_101+v3_010*min(fpdh+30,v3Get(pos,"Y")-5))
-						while twait() do
-							insSet(hrp,"CFrame",startcf)
-							insSet(hrp,"AssemblyLinearVelocity",v3_0)
-							insSet(hrp,"AssemblyAngularVelocity",v3_0)
-							if osclock()>t then
-								break
-							end
-						end
-					end
-					if newc~=c then
-						return
-					end
-					primarypart=insGet(newc,"PrimaryPart") or hrp
-					if hidedeatheffect and GetCoreGuiEnabled(sg,enumH) then
-						SetCoreGuiEnabled(sg,enumH,false)
-					end
-					if pdloadedtime then
-						if (osclock()<pdloadedtime) then
-							twait(pdloadedtime-osclock())
-						end
-						pdloadedtime=nil
-					end
-					if breakjointsmethod==4 then
-						local h=FindFirstChildOfClass(newc,"Humanoid")
-						if h then
-							replicatesignal(insGet(h,"ServerBreakJoints"))
-						else
-							insGet(newc,"BreakJoints")(newc)
-						end
-					elseif breakjointsmethod==1 then
-						insGet(newc,"BreakJoints")(newc)
-						local h=FindFirstChildOfClass(newc,"Humanoid")
-						if h then
-							insSet(h,"Health",0)
-						end
-					elseif breakjointsmethod==2 then
-						local h=FindFirstChildOfClass(newc,"Humanoid")
-						if h then
-							insSet(h,"Health",0)
-						else
-							insGet(newc,"BreakJoints")(newc)
-						end
-					else
-						insGet(newc,"BreakJoints")(newc)
-					end
-					Connect(insGet(newc,"DescendantAdded"),ondes)
-					for i,v in next,QueryDescendants(newc,"Attachment") do
-						ondes(v)
-					end
-				else
-					local hrp=timeQueryDescendants(newc,">BasePart#HumanoidRootPart",10)[1]
-					if hrp and c and IsDescendantOf(newc,ws) then
-						rootparts[v]=hrp
-					end
+					end)
+					con1=Connect(insGet(newc,"ChildAdded"),function()
+						refresh=true
+					end)
 				end
 			end
 		end
-		charcons[v]=Connect(GetPropertyChangedSignal(v,"Character"),oncharacter)
+
+		local charcon=Connect(GetPropertyChangedSignal(v,"Character"),oncharacter)
 		oncharacter()
-	end
-	local cons={}
-	tinsert(cons,Connect(insGet(plrs,"PlayerRemoving"),function(v)
-		simradv=simradv-1000
-		local charcon=charcons[v]
-		if charcon then
+		plrcleanups[v]=function()
+			simradv=simradv-1000
+			characters[v]=nil
+			rootparts[v]=nil
+			if con0 then
+				Disconnect(con0)
+				Disconnect(con1)
+				con0=nil
+			end
 			Disconnect(charcon)
 		end
-		characters[v]=nil
-		rootparts[v]=nil
+	end
+	tinsert(cons,Connect(insGet(plrs,"PlayerRemoving"),function(v)
+		local cleanup=plrcleanups[v]
+		if cleanup then
+			cleanup()
+			plrcleanups[v]=nil
+		end
 	end))
 	for i,v in next,GetPlayers(plrs) do simradv=simradv+1000 if v~=lp then tspawn(onplayer,v) end end
 	tinsert(cons,Connect(insGet(plrs,"PlayerAdded"),onplayer))
-	onplayer(lp)
+	if disguiscripts then
+		tinsert(cons,Connect(insGet(pg,"DescendantAdded"),function(v)
+			if IsA(v,"Script") then --mind Enum.RunContext.Client
+				insSet(v,"Disabled",true) 
+			end
+		end))
+	end
+
+	local lastc=nil
+	local oncharacter=function()
+		local newc=insGet(lp,"Character")
+		if newc and (newc~=lastc) then
+			lastc=newc
+
+			if hrpcon0 then
+				Disconnect(hrpcon0)
+				Disconnect(hrpcon1)
+				hrpcon0=nil
+			end
+
+			if discharscripts then
+				Connect(insGet(newc,"DescendantAdded"),discharscripts)
+				for i,v in next,QueryDescendants(newc,"Script") do
+					insSet(v,"Disabled",true)
+				end
+			end
+
+			characters[lp]=newc
+			refreshrayfilter()
+
+			local hrp=QueryDescendants(newc,">BasePart#HumanoidRootPart")[1]
+			if not hrp then
+				local refresh=true
+				local thread=crunning()
+				hrpcon1=Connect(preanimation,function()
+					if refresh then
+						hrp=QueryDescendants(newc,">BasePart#HumanoidRootPart")[1] or FindFirstChildWhichIsA(newc,"BasePart")
+						if hrp then
+							Disconnect(hrpcon0)
+							Disconnect(hrpcon1)
+							hrpcon0=nil
+							cresume(thread)
+							return
+						end
+						refresh=false
+					end
+				end)
+				hrpcon0=Connect(insGet(newc,"ChildAdded"),function()
+					refresh=true
+				end)
+				cyield()
+				Wait(stepped)
+			end
+
+			c=newc
+			if next(flingtable) then
+				if flingchangestate==3 then
+					local hum=FindFirstChildOfClass(c,"Humanoid")
+					if hum then
+						insGet(hum,"ChangeState")(hum,e.HumanoidStateType.Physics)
+						insGet(hum,"SetStateEnabled")(hum,e.HumanoidStateType.Seated,false)
+					end
+				elseif flingchangestate==1 then
+					local hum=FindFirstChildOfClass(c,"Humanoid")
+					if hum then
+						insGet(hum,"ChangeState")(hum,e.HumanoidStateType.Physics)
+					end
+				elseif flingchangestate==2 then
+					local hum=FindFirstChildOfClass(c,"Humanoid")
+					if hum then
+						insGet(hum,"SetStateEnabled")(hum,e.HumanoidStateType.Seated,false)
+					end
+				end
+				for i,v in next,tclone(flingtable) do
+					if not c then
+						return
+					end
+					local startpos=insGet(i,"Position")
+					local stoptime=sine+3
+					while true do
+						twait()
+						if sine>stoptime then
+							break
+						end
+						if insGet(i,"Anchored") or not IsDescendantOf(i,ws) then
+							break
+						end
+						if vmagnitude(startpos-insGet(i,"Position"))>200 then
+							break
+						end
+						local tcf=cfAdd(insGet(i,"CFrame"),insGet(i,"AssemblyLinearVelocity")*(sin(sine*15)+1))
+						if novoid and (cfGet(tcf,"Y")<novoid) then
+							tcf=cfAdd(tcf,v3_010*(novoid-cfGet(tcf,"Y")))
+						end
+						insSet(hrp,"CFrame",tcf)
+						insSet(hrp,"AssemblyLinearVelocity",insGet(i,"AssemblyLinearVelocity")*v3_101*75)
+						insSet(hrp,"AssemblyAngularVelocity",flingvel)
+					end
+					if v then
+						Destroy(v)
+					end
+					flingtable[i]=nil
+				end
+				insSet(hrp,"AssemblyLinearVelocity",v3_0)
+				insSet(hrp,"AssemblyAngularVelocity",v3_0)
+				insSet(hrp,"CFrame",cfr)
+				twait(0.25)
+			end
+			if respawntp==0 then
+				twait()
+			elseif respawntp==1 then
+				local startpos=pos+v3(mrandom(-32,32),0,mrandom(-32,32))
+				local dir=nil
+				local poscheck=true
+				while poscheck do
+					poscheck=false
+					for i,v in next,rootparts do
+						local diff=(startpos-insGet(v,"Position"))*v3_101
+						if vmagnitude(diff)<10 then
+							poscheck=true
+							dir=dir or (vnormalize(diff)*3)
+							startpos=startpos+dir
+						end
+					end
+					local diff=(startpos-pos)*v3_101
+					if vmagnitude(diff)<10 then
+						poscheck=true
+						dir=dir or (vnormalize(diff)*3)
+						startpos=startpos+dir
+					end
+				end
+				startpos=cfAdd(cfGet(cfr,"Rotation"),startpos)
+				insSet(hrp,"CFrame",startpos)
+				insSet(hrp,"AssemblyLinearVelocity",v3_0)
+				insSet(hrp,"AssemblyAngularVelocity",v3_0)
+				twait(0.25)
+			elseif respawntp==2 then
+				insSet(hrp,"CFrame",cfAdd(cfr,cfGet(cfr,"RightVector")*3.5-cfGet(cfr,"LookVector")*3.5))
+				insSet(hrp,"AssemblyLinearVelocity",v3_0)
+				insSet(hrp,"AssemblyAngularVelocity",v3_0)
+				twait(0.25)
+			elseif respawntp==3 then
+				local t=osclock()+0.25
+				local startcf=cfAdd(cfMul(cfGet(cfr,"Rotation"),angles(1.5707963267948966,0,0)),pos*v3_101+v3_010*min(fpdh+30,v3Get(pos,"Y")-5))
+				while twait() do
+					insSet(hrp,"CFrame",startcf)
+					insSet(hrp,"AssemblyLinearVelocity",v3_0)
+					insSet(hrp,"AssemblyAngularVelocity",v3_0)
+					if osclock()>t then
+						break
+					end
+				end
+			end
+			if newc~=c then
+				return
+			end
+			primarypart=insGet(newc,"PrimaryPart") or hrp
+			if hidedeatheffect and GetCoreGuiEnabled(sg,enumH) then
+				SetCoreGuiEnabled(sg,enumH,false)
+			end
+			if breakjointsmethod==4 then
+				local h=FindFirstChildOfClass(newc,"Humanoid")
+				if h then
+					replicatesignal(insGet(h,"ServerBreakJoints"))
+				else
+					insGet(newc,"BreakJoints")(newc)
+				end
+			elseif breakjointsmethod==1 then
+				insGet(newc,"BreakJoints")(newc)
+				local h=FindFirstChildOfClass(newc,"Humanoid")
+				if h then
+					insSet(h,"Health",0)
+				end
+			elseif breakjointsmethod==2 then
+				local h=FindFirstChildOfClass(newc,"Humanoid")
+				if h then
+					insSet(h,"Health",0)
+				else
+					insGet(newc,"BreakJoints")(newc)
+				end
+			else
+				insGet(newc,"BreakJoints")(newc)
+			end
+			cons.ondes=Connect(insGet(newc,"DescendantAdded"),ondes)
+			for i,v in next,QueryDescendants(newc,"Attachment") do
+				ondes(v)
+			end
+		end
+	end
+	tinsert(cons,Connect(GetPropertyChangedSignal(lp,"Character"),oncharacter))
+	oncharacter()
+
 	local setsimrad=emptyfunction
 	if simrad then
 		setsimrad=function()
@@ -972,7 +1045,6 @@ local reanimate=function()
 	local enumMB2=e.UserInputType.MouseButton2
 	local enumMLCP=e.MouseBehavior.LockCurrentPosition
 	local enumMLC=(insGet(uis,"TouchEnabled") and enumMLCP) or e.MouseBehavior.LockCenter 
-	local enumMD=e.MouseBehavior.Default
 	local enumMW=e.UserInputType.MouseWheel
 	local enumMM=e.UserInputType.MouseMovement
 
@@ -1037,7 +1109,7 @@ local reanimate=function()
 	refreshKeyboardMovement()
 
 	local keyShift=KeyCode.LeftShift
-	local keyI=KeyCode.I
+	--local keyI=KeyCode.I
 	tinsert(cons,Connect(insGet(uis,"InputBegan"),function(a)
 		if insGet(gs,"MenuIsOpen") or GetFocusedTextBox(uis) then
 			return
@@ -1059,8 +1131,8 @@ local reanimate=function()
 			jumpingInput=true
 		elseif a==keyShift then
 			shiftlock=allowshiftlock and not shiftlock
-		elseif invisiblekeybind and a==keyI then
-			invisible=not invisible
+		--elseif invisiblekeybind and a==keyI then
+			--invisible=not invisible
 		elseif modes[a] then
 			local modeLeft=modes[mode].modeLeft
 			if modeLeft then
@@ -1246,12 +1318,12 @@ local reanimate=function()
 		end
 	end))
 	
-	local predictionfling=nil
 	if fling then
-		predictionfling=function(target)
-			if not c then
-				return false
-			end
+		local guiparent=FindFirstChildOfClass(game,"CoreGui")
+		if not pcall(FindFirstChildOfClass,guiparent,"ScreenGui") then
+			guiparent=pg
+		end
+		fling=function(target)
 			if typeof(target)~="Instance" then 
 				target=insGet(mouse,"Target")
 				if not target then
@@ -1263,7 +1335,7 @@ local reanimate=function()
 			end
 			if IsA(target,"BasePart") or IsA(target,"Humanoid") then 
 				target=insGet(target,"Parent") 
-				if IsA(target,"Accessory") then
+				if IsA(target,"Accoutrement") then
 					target=insGet(target,"Parent")
 				end
 			end
@@ -1274,17 +1346,11 @@ local reanimate=function()
 			if (not targetpart) or (flingtable[targetpart]~=nil) then
 				return false
 			end
-			if permadeath then
-				replicatesignal(cdsb)
-			end
 			if highlightflingtargets then
 				local h=i("Highlight")
 				insSet(h,"Name",rs())
 				insSet(h,"Adornee",target)
-				--insSet(h,"FillColor",c3(1,0,0))
 				insSet(h,"OutlineColor",c3(1,0,0))
-				insSet(h,"FillTransparency",0.5) -- 1
-				insSet(h,"OutlineTransparency",0)
 				insSet(h,"Parent",guiparent)
 				flingtable[targetpart]=h
 			else
@@ -1302,8 +1368,9 @@ local reanimate=function()
 			end))
 		end]]
 	else
-		predictionfling=emptyfunction
+		fling=emptyfunction
 	end
+
 	if ctrlclicktp then
 		ctrlclicktp=KeyCode.LeftControl
 		local tpoff=v3_010*3
@@ -1316,7 +1383,7 @@ local reanimate=function()
 						xzvel=v3_0
 						Yvel=0
 					else
-						predictionfling()
+						fling()
 					end
 				end
 			end))
@@ -1331,7 +1398,7 @@ local reanimate=function()
 			end))
 		end
 	elseif clickfling then
-		tinsert(cons,Connect(insGet(mouse,"Button1Down"),predictionfling))
+		tinsert(cons,Connect(insGet(mouse,"Button1Down"),fling))
 	end
 
 	local hhOff=3
@@ -1343,37 +1410,8 @@ local reanimate=function()
 
 	local noYvelTime=1
 	local lastsine=sine
-	local con=nil
 	local onground=nil
 	local mainFunction=function()
-		if not c then 
-			for i,v in next,cframes do
-				local p=i.v
-				if p then
-					Destroy(p)
-				end
-			end
-			for i,v in next,flingtable do
-				if v then --it could be false
-					Destroy(v)
-				end
-			end
-			for i,v in next,charcons do
-				Disconnect(v)
-			end
-			for i,v in next,cons do
-				Disconnect(v)
-			end
-			mouseBehavior=nil
-			insSet(uis,"MouseBehavior",enumMD)
-			onnewcamera()
-			local c=insGet(lp,"Character")
-			if c then
-				insSet(cam,"CameraSubject",FindFirstChildOfClass(c,"Humanoid"))
-			end
-			return con and Disconnect(con) 
-		end
-
 		sine=osclock()
 		local delta=sine-lastsine
 		deltaTime=min(delta*10,1)
@@ -1700,14 +1738,14 @@ local reanimate=function()
 		local idleoff=idlerv*0.003910064697265625 --0.0156402587890625/4
 
 		local claimpos=insGet(primarypart,"Position")
-		local claimposY=v3Get(claimpos,"Y")
+
 		for i,v in next,cframes do
 			local part=i.p
-			if invisible then
-				v=cfAdd(v,invisibleoffset)
-			end
+			--if invisible then
+				--v=cfAdd(v,invisibleoffset)
+			--end
 			if part then
-				if insGet(part,"ReceiveAge")==0 then
+				if (insGet(part,"ReceiveAge")==0) and not GetJoints(part)[1] then
 					local placeholder=i.v
 					local vpos=cfGet(v,"Position")
 					if novoid and (v3Get(vpos,"Y")<novoid) then
@@ -1744,19 +1782,14 @@ local reanimate=function()
 					end
 					local claimtime=i.c
 					if claimtime then
-						if sine-claimtime<retVelTime then
-							local Ydiff=cfGet(v,"Y")-claimposY
-							local velY=25.01
-							local fallingTime=0
-							while (Ydiff>0) or (velY>0) do
-								fallingTime=fallingTime+0.025
-								if fallingTime>0.6 then
-									break
-								end
-								velY=velY-velYdelta
-								Ydiff=Ydiff+(velY*0.025)
+						if (sine-claimtime)<retVelTime then
+							local offsetToPrimaryPart=claimpos-cfGet(v,"Position")
+							local a=625.5001+wsGravity*-2*v3Get(offsetToPrimaryPart,"Y")
+							if a>0 then --part can reach primary part
+								insSet(part,"AssemblyLinearVelocity",v3_net+offsetToPrimaryPart*v3_101/((25.01+sqrt(a))/wsGravity))
+							else --part cant reach primary part so at least aim for closest point
+								insSet(part,"AssemblyLinearVelocity",v3_net+offsetToPrimaryPart*v3_101/(30.010999900019996/wsGravity))
 							end
-							insSet(part,"AssemblyLinearVelocity",(claimpos-cfGet(v,"Position"))*v3_101/fallingTime+v3_net)
 						else
 							local vel1=vel*noYvelTime+xzvel
 							if vmagnitude(vel1)>25.01 then
@@ -1799,12 +1832,13 @@ local reanimate=function()
 				end
 			end
 		end
+
 		setsimrad()
 	end
 
 	sine=osclock()
 	lastsine=sine
-	con=Connect(heartbeat,mainFunction)
+	tinsert(cons,Connect(heartbeat,mainFunction))
 	mainFunction()
 
 	local refreshjoints=function(v) --use this on the main part if u have parts that
@@ -1931,8 +1965,8 @@ local reanimate=function()
 	return {
 		cframes=cframes,
 		joints=joints,
-		fling=predictionfling,
-		predictionfling=predictionfling,
+		fling=fling,
+		predictionfling=fling,
 		refreshjoints=refreshjoints,
 		raycastlegs=raycastlegs,
 		velbycfrvec=velbycfrvec,

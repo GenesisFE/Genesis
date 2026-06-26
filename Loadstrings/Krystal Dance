@@ -21,17 +21,23 @@ placeholders = true --adds transparent parts showing your hats when you don't ha
 clickfling = true --adds click flinging regardless of attacks
 highlightflingtargets = true --highlight fling
 discharscripts = true --disable character scripts
-flingchangestate = true --fling with whole body
+disguiscripts = true --disable scripts inside of playergui
+flingchangestate = 3 --fling enhancements
+-- 0 - none
+-- 1 - changestate physics (fling with whole body)
+-- 2 - disable sitting
+-- 3 - all (changestate physics and disable sitting)
 hidedeatheffect = true --hides the red damage border when you die (respawn)
 respawntp = 3 --respawn tp mode
 -- 0 - stay at spawn
 -- 1 - randomtp close
 -- 2 - behind fake character
 -- 3 - hide body
-breakjointsmethod = 1 --breakjoints mode
+breakjointsmethod = 4 --breakjoints mode
 -- 1 - health+breakjoints (the most support)
 -- 2 - health or breakjoints
 -- 3 - breakjoints
+-- 4 - serverbreakjoints (replicatesignal)
 simrad = true --sets simulation radius
 
 --==========================================================================================================================--
