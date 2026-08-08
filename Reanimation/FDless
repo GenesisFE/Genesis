@@ -9,13 +9,14 @@ end
 
 --[[
 	FDless Reanimate by MyWorld continued by rqz
-	"better and better till patched, then switch"
+	"var"
 	Patchma Hub Discord: https://discord.com/invite/QMy5f6DrbH
 ]]
 
 --no need to get and index the library tables with function names every time the script uses them
 local osclock=os.clock
 local tspawn=task.spawn
+local tdelay=task.delay
 local twait=task.wait
 local schar=string.char
 local ssub=string.sub
@@ -46,7 +47,9 @@ local xpcall=xpcall
 local type=type
 local typeof=typeof
 local game=game
-local replicatesignal=replicatesignal
+local sethiddenproperty=sethiddenproperty or set_hidden_property or sethiddenprop
+local setscriptable=setscriptable or set_scriptable
+local replicatesignal=replicatesignal or replicate_signal
 
 local i=Instance.new 
 local v2=Vector2.new 
@@ -71,7 +74,18 @@ local v3_xz=v3_101*10
 local v3_xzL=v3_101*250.1
 local v3_net=v3_010*25.01
 
+local enumphysics=e.HumanoidStateType.Physics
+local enumragdoll=e.HumanoidStateType.Ragdoll
+local enumrunning=e.HumanoidStateType.Running
+local enumseated=e.HumanoidStateType.Seated
 local enumMD=e.MouseBehavior.Default
+
+local sm=v3_010/2
+local dense=PhysicalProperties.new(100,0,0,100,100)
+local light=PhysicalProperties.new(0.0001,0,0,100,100)
+local humstatesbl=e.HumanoidStateType:GetEnumItems()
+table.remove(humstatesbl,tfind(humstatesbl,enumrunning))
+table.remove(humstatesbl,tfind(humstatesbl,e.HumanoidStateType.None))
 
 --not "local function rs" to not assign debug names
 local rs=function()
@@ -129,13 +143,15 @@ local sg=FindFirstChildOfClass(game,"StarterGui")
 local lp=insGet(plrs,"LocalPlayer")
 local pg=FindFirstChildOfClass(lp,"PlayerGui")
 local mouse=insGet(lp,"GetMouse")(lp)
-local rst=insGet(plrs,"RespawnTime")+0.07 --1/15
 local preanimation=insGet(rus,"PreAnimation")
 local stepped=insGet(rus,"Stepped")
 local heartbeat=insGet(rus,"Heartbeat")
 local renderstepped=insGet(rus,"RenderStepped")
 
 local GetPlayers=insGet(plrs,"GetPlayers")
+local BreakJoints=insGet(i("Model"),"BreakJoints")
+local ChangeState=insGet(i("Humanoid"),"ChangeState")
+local SetStateEnabled=insGet(i("Humanoid"),"SetStateEnabled")
 local GetJoints=insGet(insGet(ws,"Terrain"),"GetJoints")
 local SetCore=insGet(sg,"SetCore")
 local SetCoreGuiEnabled=insGet(sg,"SetCoreGuiEnabled")
@@ -305,8 +321,32 @@ local ctrltp=ctrltp~=false
 --local invisibleoffset=(type(invisibleoffset)=="number" and v3_010*-invisibleoffset) or v3_010*-100
 local placeholders=placeholders~=false
 local clickfling=clickfling==true
+local flingdirection=(type(flingdirection)=="number" and flingdirection) or 0
+local flingoffset=nil
+local flingvel=nil
+local flingrotvel=nil
+if flingdirection==0 then
+	flingoffset=-v3_010
+	flingvel=v3(0,16000,0)
+	flingrotvel=v3(16000,0,16000)
+elseif flingdirection==1 then
+	flingoffset=v3_010
+	flingvel=v3(0,-16000,0)
+	flingrotvel=v3(16000,0,16000)
+elseif flingdirection==2 then
+	flingoffset=v3(-0.5,0,0)
+	flingvel=v3(16000,0,0)
+	flingrotvel=v3(0,16000,0)
+end
+local flingtargetting=(type(flingtargetting)=="number" and flingtargetting) or 3
+if (not sethiddenproperty) and (flingtargetting==3) then
+	flingtargetting=2
+end
+if (not setscriptable) and (flingtargetting==2) then
+	flingtargetting=0
+end	
 local highlightflingtargets=highlightflingtargets~=false
-local rainbowflinghighlights=rainbowflinghighlights~=false
+--local rainbowflinghighlights=rainbowflinghighlights~=false
 local discharscripts=discharscripts~=false and function(v) if IsA(v,"Script") then insSet(v,"Disabled",true) end end
 local flingchangestate=(type(flingchangestate)=="number" and flingchangestate) or 3
 local respawntp=(type(respawntp)=="number" and respawntp) or 3
@@ -368,16 +408,14 @@ local reanimate=function()
 		optimize the optimized
 	]]
 
-	local novoid = true --prevents parts from going under workspace.FallenPartsDestroyHeight if you control them
-	local speedlimit = 3000 --makes your parts move slower if the magnitude of their velocity is higher than this
-	local retVelTime = 0.51 --time that claimed parts have velocity to reclaim in case u lose them
-	local walkSpeed = 16 --your walkspeed (can be changed at runtime)
-	local jumpPower = 50 --your jump power (can be changed at runtime)
-	local gravity = 196.2 --how fast the characters velocity decreases while falling (can be changed at runtime)
-	local ctrlclicktp = ctrltp --makes you teleport where u point ur mouse cursor at when click and hold ctrl down
+	local novoid=true --prevents parts from going under workspace.FallenPartsDestroyHeight if you control them
+	local speedlimit=3000 --makes your parts move slower if the magnitude of their velocity is higher than this
+	local retVelTime=0.51 --time that claimed parts have velocity to reclaim in case u lose them
+	local walkSpeed=16 --your walkspeed (can be changed at runtime)
+	local jumpPower=50 --your jump power (can be changed at runtime)
+	local gravity=196.2 --how fast the characters velocity decreases while falling (can be changed at runtime)
+	local ctrlclicktp=ctrltp --makes you teleport where u point ur mouse cursor at when click and hold ctrl down
 	--local invisible = false --moves your parts underground so you are not visible by pressing "i"
-	local clickfling = clickfling --makes you fling the person you clicked when its available to do so
-	local flingvel = v3(15000,16000,15000) --the rotation velocity that ur character will have while flinging
 
 	if stopreanimate() then return end
 
@@ -431,9 +469,9 @@ local reanimate=function()
 	camcon2=Connect(GetPropertyChangedSignal(ws,"CurrentCamera"),onnewcamera)
 
 	local wsGravity=insGet(ws,"Gravity")
-	Connect(GetPropertyChangedSignal(ws,"Gravity"),function()
+	tinsert(cons,Connect(GetPropertyChangedSignal(ws,"Gravity"),function()
 		wsGravity=insGet(ws,"Gravity")
-	end)
+	end))
 
 	local fpdh=insGet(ws,"FallenPartsDestroyHeight")
 	novoid=novoid and (fpdh+1)
@@ -441,7 +479,7 @@ local reanimate=function()
 	local cfr=nil
 	c=insGet(lp,"Character")
 	if c and IsDescendantOf(c,ws) then
-		cfr=QueryDescendants(c,">BasePart#HumanoidRootPart")[1] or QueryDescendants(c,">BasePart#Torso")[1] or QueryDescendants(c,">BasePart#UpperTorso")[1] or (c and FindFirstChildWhichIsA(c,"BasePart"))
+		cfr=QueryDescendants(c,">BasePart#HumanoidRootPart")[1] or QueryDescendants(c,">BasePart#Torso")[1] or QueryDescendants(c,">BasePart#UpperTorso")[1] or FindFirstChildWhichIsA(c,"BasePart")
 		if cfr then
 			cfr=insGet(cfr,"CFrame")
 		else
@@ -769,7 +807,6 @@ local reanimate=function()
 		local lastc=nil
 		local con0=nil
 		local con1=nil
-		local refresh=nil
 		local oncharacter=function()
 			local newc=insGet(v,"Character")
 			if newc and (newc~=lastc) then
@@ -788,10 +825,19 @@ local reanimate=function()
 				if hrp then
 					rootparts[v]=hrp
 				else
-					refresh=true
+					local refresh=true					
+					local threshold=false
+					tdelay(0.5,function()
+						refresh=true
+						threshold=true
+					end)
 					con0=Connect(preanimation,function()
 						if refresh then
-							hrp=QueryDescendants(newc,">BasePart#HumanoidRootPart")[1]
+							if threshold then
+								hrp=QueryDescendants(newc,">BasePart#HumanoidRootPart")[1] or QueryDescendants(newc,">BasePart#Torso")[1] or QueryDescendants(newc,">BasePart#UpperTorso")[1] or FindFirstChildWhichIsA(newc,"BasePart")
+							else
+								hrp=QueryDescendants(newc,">BasePart#HumanoidRootPart")[1]
+							end
 							if hrp then
 								rootparts[v]=hrp
 								Disconnect(con0)
@@ -865,10 +911,19 @@ local reanimate=function()
 			local hrp=QueryDescendants(newc,">BasePart#HumanoidRootPart")[1]
 			if not hrp then
 				local refresh=true
+				local threshold=false
+				tdelay(0.5,function()
+					refresh=true
+					threshold=true
+				end)
 				local thread=crunning()
 				hrpcon1=Connect(preanimation,function()
 					if refresh then
-						hrp=QueryDescendants(newc,">BasePart#HumanoidRootPart")[1] or FindFirstChildWhichIsA(newc,"BasePart")
+						if threshold then
+							hrp=QueryDescendants(newc,">BasePart#HumanoidRootPart")[1] or QueryDescendants(newc,">BasePart#Torso")[1] or QueryDescendants(newc,">BasePart#UpperTorso")[1] or FindFirstChildWhichIsA(newc,"BasePart")
+						else
+							hrp=QueryDescendants(newc,">BasePart#HumanoidRootPart")[1]
+						end
 						if hrp then
 							Disconnect(hrpcon0)
 							Disconnect(hrpcon1)
@@ -888,57 +943,128 @@ local reanimate=function()
 
 			c=newc
 			if next(flingtable) then
-				if flingchangestate==3 then
-					local hum=FindFirstChildOfClass(c,"Humanoid")
-					if hum then
-						insGet(hum,"ChangeState")(hum,e.HumanoidStateType.Physics)
-						insGet(hum,"SetStateEnabled")(hum,e.HumanoidStateType.Seated,false)
-					end
-				elseif flingchangestate==1 then
-					local hum=FindFirstChildOfClass(c,"Humanoid")
-					if hum then
-						insGet(hum,"ChangeState")(hum,e.HumanoidStateType.Physics)
-					end
-				elseif flingchangestate==2 then
-					local hum=FindFirstChildOfClass(c,"Humanoid")
-					if hum then
-						insGet(hum,"SetStateEnabled")(hum,e.HumanoidStateType.Seated,false)
+				local hum=FindFirstChildOfClass(c,"Humanoid")
+				if hum then
+					if flingchangestate==3 then
+						ChangeState(hum,enumphysics)
+						SetStateEnabled(hum,enumseated,false)
+					elseif flingchangestate==1 then
+						ChangeState(hum,enumphysics)
+					else
+						if flingchangestate==2 then
+							SetStateEnabled(hum,enumseated,false)
+						end
+						if flingtargetting~=0 then
+							ChangeState(hum,enumragdoll)
+							SetStateEnabled(hum,enumrunning,false)
+						end
 					end
 				end
-				for i,v in next,tclone(flingtable) do
+				twait(0.25)
+				for i1,v in next,tclone(flingtable) do
 					if not c then
 						return
 					end
-					local startpos=insGet(i,"Position")
-					local stoptime=sine+3
+					if flingtargetting==3 then
+						sethiddenproperty(hrp,"PhysicsRepRootPart",i1)
+					elseif flingtargetting==2 then
+						setscriptable(hrp,"PhysicsRepRootPart",true)
+						insSet(hrp,"PhysicsRepRootPart",i1)
+						setscriptable(hrp,"PhysicsRepRootPart",false)
+					elseif flingtargetting==1 then
+						local hrpcpp=insGet(hrp,"CustomPhysicalProperties")
+						local tparent=insGet(i1,"Parent")
+						local tcfr=insGet(i1,"CFrame")
+
+						local model=i("Model")
+						local hum=i("Humanoid",model)
+						for i,v in next,humstatesbl do
+							SetStateEnabled(hum,v,false)
+						end
+
+						local restorejoints={}
+						for i,v in next,GetJoints(hrp) do
+							restorejoints[v]=insGet(v,"Parent")
+							insSet(v,"Parent",nil)
+						end
+						for i,v in next,GetJoints(i1) do
+							restorejoints[v]=insGet(v,"Parent")
+							insSet(v,"Parent",nil)
+						end
+
+						local tcfr1=cf(cfGet(tcfr,"Position")+v3_010*mrandom(10000,20000))
+						insSet(i1,"Parent",ws)
+						insSet(i1,"CFrame",tcfr1)
+						insSet(hrp,"Parent",model)
+						insSet(hrp,"CFrame",tcfr1+(insGet(hrp,"Size")+insGet(i1,"Size"))*sm)
+						insSet(i1,"CustomPhysicalProperties",dense)
+						insSet(hrp,"CustomPhysicalProperties",light)
+						insSet(model,"Parent",ws)
+						ChangeState(hum,enumrunning)
+						if not insGet(i1,"CanCollide") then
+							insSet(i1,"CanCollide",true)
+						end
+						Wait(stepped)
+						for i,v in next,restorejoints do
+							insSet(i,"Parent",v)
+						end
+						insSet(i1,"CFrame",tcfr)
+						insSet(i1,"Parent",tparent)
+						insSet(hrp,"CustomPhysicalProperties",hrpcpp)
+						insSet(hrp,"Parent",newc)
+						Destroy(model)
+					end
+					local startpos=insGet(i1,"Position")
+					local stoptime=sine+(((flingtargetting~=0) and 0.1) or 3)
 					while true do
-						twait()
+						if insGet(i1,"Anchored") or not IsDescendantOf(i1,ws) then
+							break
+						end
+						if vmagnitude(startpos-insGet(i1,"Position"))>200 then
+							break
+						end
+						if flingtargetting~=0 then
+							local tcf=cfAdd(insGet(i1,"CFrame"),flingoffset)
+							if novoid and (cfGet(tcf,"Y")<novoid) then
+								tcf=cfAdd(tcf,v3_010*(novoid-cfGet(tcf,"Y")))
+							end
+							insSet(hrp,"CFrame",tcf)
+							insSet(hrp,"AssemblyLinearVelocity",flingvel)
+						else
+							local tcf=cfAdd(insGet(i1,"CFrame"),insGet(i1,"AssemblyLinearVelocity")*(sin(sine*15)+1)+flingoffset)
+							if novoid and (cfGet(tcf,"Y")<novoid) then
+								tcf=cfAdd(tcf,v3_010*(novoid-cfGet(tcf,"Y")))
+							end
+							insSet(hrp,"CFrame",tcf)
+							insSet(hrp,"AssemblyLinearVelocity",insGet(i1,"AssemblyLinearVelocity")*v3_101*75)
+						end
+						insSet(hrp,"AssemblyAngularVelocity",flingrotvel)
 						if sine>stoptime then
 							break
 						end
-						if insGet(i,"Anchored") or not IsDescendantOf(i,ws) then
-							break
-						end
-						if vmagnitude(startpos-insGet(i,"Position"))>200 then
-							break
-						end
-						local tcf=cfAdd(insGet(i,"CFrame"),insGet(i,"AssemblyLinearVelocity")*(sin(sine*15)+1))
-						if novoid and (cfGet(tcf,"Y")<novoid) then
-							tcf=cfAdd(tcf,v3_010*(novoid-cfGet(tcf,"Y")))
-						end
-						insSet(hrp,"CFrame",tcf)
-						insSet(hrp,"AssemblyLinearVelocity",insGet(i,"AssemblyLinearVelocity")*v3_101*75)
-						insSet(hrp,"AssemblyAngularVelocity",flingvel)
+						twait()
 					end
 					if v then
 						Destroy(v)
 					end
-					flingtable[i]=nil
+					flingtable[i1]=nil
 				end
-				insSet(hrp,"AssemblyLinearVelocity",v3_0)
-				insSet(hrp,"AssemblyAngularVelocity",v3_0)
-				insSet(hrp,"CFrame",cfr)
-				twait(0.25)
+				if flingtargetting==3 then
+					sethiddenproperty(hrp,"PhysicsRepRootPart",nil)
+				elseif flingtargetting==2 then
+					setscriptable(hrp,"PhysicsRepRootPart",true)
+					insSet(hrp,"PhysicsRepRootPart",nil)
+					setscriptable(hrp,"PhysicsRepRootPart",false)
+				elseif flingtargetting==1 then
+					SetStateEnabled(hum,enumrunning,true)
+					ChangeState(hum,enumrunning)
+				end
+				if respawntp==0 then
+					insSet(hrp,"AssemblyLinearVelocity",v3_0)
+					insSet(hrp,"AssemblyAngularVelocity",v3_0)
+					insSet(hrp,"CFrame",cfr)
+					twait(0.3)
+				end
 			end
 			if respawntp==0 then
 				twait()
@@ -967,14 +1093,14 @@ local reanimate=function()
 				insSet(hrp,"CFrame",startpos)
 				insSet(hrp,"AssemblyLinearVelocity",v3_0)
 				insSet(hrp,"AssemblyAngularVelocity",v3_0)
-				twait(0.25)
+				twait(0.3)
 			elseif respawntp==2 then
 				insSet(hrp,"CFrame",cfAdd(cfr,cfGet(cfr,"RightVector")*3.5-cfGet(cfr,"LookVector")*3.5))
 				insSet(hrp,"AssemblyLinearVelocity",v3_0)
 				insSet(hrp,"AssemblyAngularVelocity",v3_0)
-				twait(0.25)
+				twait(0.3)
 			elseif respawntp==3 then
-				local t=osclock()+0.25
+				local t=osclock()+0.3
 				local startcf=cfAdd(cfMul(cfGet(cfr,"Rotation"),angles(1.5707963267948966,0,0)),pos*v3_101+v3_010*min(fpdh+30,v3Get(pos,"Y")-5))
 				while twait() do
 					insSet(hrp,"CFrame",startcf)
@@ -997,10 +1123,10 @@ local reanimate=function()
 				if h then
 					replicatesignal(insGet(h,"ServerBreakJoints"))
 				else
-					insGet(newc,"BreakJoints")(newc)
+					BreakJoints(newc)
 				end
 			elseif breakjointsmethod==1 then
-				insGet(newc,"BreakJoints")(newc)
+				BreakJoints(newc)
 				local h=FindFirstChildOfClass(newc,"Humanoid")
 				if h then
 					insSet(h,"Health",0)
@@ -1010,10 +1136,10 @@ local reanimate=function()
 				if h then
 					insSet(h,"Health",0)
 				else
-					insGet(newc,"BreakJoints")(newc)
+					BreakJoints(newc)
 				end
 			else
-				insGet(newc,"BreakJoints")(newc)
+				BreakJoints(newc)
 			end
 			cons.ondes=Connect(insGet(newc,"DescendantAdded"),ondes)
 			for i,v in next,QueryDescendants(newc,"Attachment") do
@@ -1131,7 +1257,7 @@ local reanimate=function()
 			jumpingInput=true
 		elseif a==keyShift then
 			shiftlock=allowshiftlock and not shiftlock
-		--elseif invisiblekeybind and a==keyI then
+			--elseif invisiblekeybind and a==keyI then
 			--invisible=not invisible
 		elseif modes[a] then
 			local modeLeft=modes[mode].modeLeft
@@ -1317,7 +1443,7 @@ local reanimate=function()
 			end
 		end
 	end))
-	
+
 	if fling then
 		local guiparent=FindFirstChildOfClass(game,"CoreGui")
 		if not pcall(FindFirstChildOfClass,guiparent,"ScreenGui") then
@@ -1342,7 +1468,7 @@ local reanimate=function()
 			if (not IsA(target,"Model")) or (target==c) then
 				return false
 			end
-			local targetpart=QueryDescendants(target,">BasePart#HumanoidRootPart")[1] or QueryDescendants(target,">BasePart#Torso")[1] or QueryDescendants(target,">BasePart#UpperTorso")[1]
+			local targetpart=QueryDescendants(target,">BasePart#Torso")[1] or QueryDescendants(target,">BasePart#UpperTorso")[1]
 			if (not targetpart) or (flingtable[targetpart]~=nil) then
 				return false
 			end
@@ -1742,7 +1868,7 @@ local reanimate=function()
 		for i,v in next,cframes do
 			local part=i.p
 			--if invisible then
-				--v=cfAdd(v,invisibleoffset)
+			--v=cfAdd(v,invisibleoffset)
 			--end
 			if part then
 				if (insGet(part,"ReceiveAge")==0) and not GetJoints(part)[1] then

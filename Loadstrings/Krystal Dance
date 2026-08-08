@@ -13,31 +13,39 @@ https://discord.com/invite/aEZpBEHgMT
 --           FDless Options           --
 --====================================--
 
-permadeath = true --adds permanent death (no respawning), see #supported-executors channel for executors that work with this
 fling = true --toggle fling
+placeholders = true --adds transparent parts showing your hats when you don't have real ones
+highlightflingtargets = true --highlight fling
 allowshiftlock = true --adds shiftlock to patchma rig
 ctrltp = true --adds control click tp
-placeholders = true --adds transparent parts showing your hats when you don't have real ones
-clickfling = true --adds click flinging regardless of attacks
-highlightflingtargets = true --highlight fling
-discharscripts = true --disable character scripts
-disguiscripts = true --disable scripts inside of playergui
+clickfling = false --adds click flinging regardless of attacks
+flingtargetting = 3 --fling reproot method
+-- 3 - sethiddenproperty
+-- 2 - setscriptable
+-- 1 - no unc (can be tampered with & detected)
+-- 0 - off (prediction fling)
+flingdirection = 0 --direction you are flinging people in
+-- 0 - upwards
+-- 1 - downwards
+-- 2 - horizontal
 flingchangestate = 3 --fling enhancements
 -- 0 - none
 -- 1 - changestate physics (fling with whole body)
 -- 2 - disable sitting
 -- 3 - all (changestate physics and disable sitting)
-hidedeatheffect = true --hides the red damage border when you die (respawn)
 respawntp = 3 --respawn tp mode
 -- 0 - stay at spawn
 -- 1 - randomtp close
 -- 2 - behind fake character
 -- 3 - hide body
+disguiscripts = true --disable scripts inside of playergui
+discharscripts = true --disable character scripts
 breakjointsmethod = 4 --breakjoints mode
 -- 1 - health+breakjoints (the most support)
 -- 2 - health or breakjoints
 -- 3 - breakjoints
 -- 4 - serverbreakjoints (replicatesignal)
+hidedeatheffect = true --hides the red damage border when you die (respawn)
 simrad = true --sets simulation radius
 
 --==========================================================================================================================--
