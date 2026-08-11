@@ -339,10 +339,10 @@ elseif flingdirection==2 then
 	flingrotvel=v3(0,16000,0)
 end
 local flingtargetting=(type(flingtargetting)=="number" and flingtargetting) or 3
-if (not sethiddenproperty) and (flingtargetting==3) then
+if (flingtargetting==3) and not sethiddenproperty then
 	flingtargetting=2
 end
-if (not setscriptable) and (flingtargetting==2) then
+if (flingtargetting==2) and not setscriptable then
 	flingtargetting=0
 end	
 local highlightflingtargets=highlightflingtargets~=false
