@@ -31,7 +31,8 @@ You can access my scripts via the ``loadstring`` folder above, it has all the cu
 ## Credits
 
 - ``rqz`` Owner, scripter, media producer
-- ``MyWorld`` creator of FDless reanimate
+- ``MyWorld`` original creator of FDless reanimate
+- ``RejectCharacterDeletions`` not doing shit
 
 ## Socials
 
